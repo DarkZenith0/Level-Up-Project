@@ -1,4 +1,8 @@
-# Project-1
-A little new project that is the beggining after the end.
+# Level Up Project
 
-Hola, no se todavia para que voy a usar este documento, este proyecto en general, pero necesito empezar con algo.
+
+In this Project you can create tasks, missions, level up your character and increase you experience.
+Its inspired on the System object of Solo Leveling.
+Please use this with caution.
+You can export and import other saves.
+Create your own tasks, etc.
