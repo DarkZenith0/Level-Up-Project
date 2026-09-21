@@ -1,0 +1,2148 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EL SISTEMA — Tracker del Jugador</title>
+<meta name="description" content="Tracker gamificado del Protocolo Reconstrucción. Estilo Solo Leveling.">
+<style>
+/* ============================================================
+   EL SISTEMA · Interfaz del Jugador
+   Estética: ventana holográfica · azul cian · negro abisal
+   ============================================================ */
+:root{
+  --vacio:#02040c;
+  --abiso:#050a18;
+  --panel:rgba(8,16,38,.86);
+  --panel2:rgba(11,22,50,.72);
+  --linea:rgba(79,196,255,.26);
+  --linea-fuerte:rgba(79,227,255,.55);
+  --cian:#4fe3ff;
+  --cian-suave:#8ff0ff;
+  --azul:#2f8fff;
+  --hondo:#12368f;
+  --blanco:#eaf6ff;
+  --tenue:#7d94bd;
+  --tenue2:#4d6188;
+  --oro:#ffd76a;
+  --peligro:#ff4d6a;
+  --violeta:#a97bff;
+  --verde:#5affc0;
+  --naranja:#ff9a4d;
+
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --display:"Arial Black","Archivo Black",Impact,"Haettenschweiler",var(--sans);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--vacio);color:var(--blanco);
+  font-family:var(--sans);font-size:15px;line-height:1.55;
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+/* Fondo: nebulosa + rejilla */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;
+  background:
+    radial-gradient(900px 620px at 18% -5%,rgba(28,86,220,.34),transparent 62%),
+    radial-gradient(760px 560px at 92% 12%,rgba(90,40,190,.24),transparent 60%),
+    radial-gradient(1100px 700px at 50% 108%,rgba(0,110,190,.22),transparent 62%),
+    linear-gradient(180deg,#02040c,#04081a 45%,#02040c);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(79,196,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,196,255,.045) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse 100% 80% at 50% 30%,#000 20%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 100% 80% at 50% 30%,#000 20%,transparent 78%);
+}
+#particulas{position:fixed;inset:0;z-index:-1;pointer-events:none}
+::selection{background:rgba(79,227,255,.32);color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#04081a}
+::-webkit-scrollbar-thumb{background:rgba(79,196,255,.3);border:2px solid #04081a}
+::-webkit-scrollbar-thumb:hover{background:rgba(79,227,255,.6)}
+
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--blanco)}
+
+/* ================= ESTRUCTURA ================= */
+#app{max-width:1340px;margin:0 auto;padding:16px 18px 90px;position:relative;z-index:1}
+
+/* ---------- Cabecera del Sistema ---------- */
+#cab{
+  position:relative;border:1px solid var(--linea);
+  background:linear-gradient(160deg,rgba(10,22,52,.94),rgba(4,9,24,.94));
+  padding:20px 24px 18px;margin-bottom:16px;
+  box-shadow:0 0 0 1px rgba(79,227,255,.06),0 24px 70px -30px rgba(0,120,220,.55),
+             inset 0 1px 0 rgba(143,240,255,.14);
+}
+.esq{position:absolute;width:16px;height:16px;border:2px solid var(--cian);pointer-events:none;opacity:.85}
+.esq.tl{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.esq.tr{top:-1px;right:-1px;border-left:0;border-bottom:0}
+.esq.bl{bottom:-1px;left:-1px;border-right:0;border-top:0}
+.esq.br{bottom:-1px;right:-1px;border-left:0;border-top:0}
+
+.cab-top{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.identidad{flex:1 1 300px;min-width:250px}
+.sys-tag{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--cian);opacity:.85;margin-bottom:7px;display:flex;align-items:center;gap:9px;
+}
+.sys-tag .dot{width:6px;height:6px;background:var(--cian);border-radius:50%;
+  box-shadow:0 0 10px var(--cian);animation:lat 2.2s infinite}
+@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
+#nombreJugador{
+  background:none;border:0;border-bottom:1px dashed transparent;color:#fff;
+  font-family:var(--display);font-size:clamp(24px,4vw,38px);letter-spacing:-.01em;
+  padding:0 2px;width:100%;max-width:420px;text-transform:uppercase;
+  text-shadow:0 0 26px rgba(79,227,255,.45);transition:.2s;
+}
+#nombreJugador:hover{border-bottom-color:var(--linea)}
+#nombreJugador:focus{outline:0;border-bottom-color:var(--cian);background:rgba(79,227,255,.05)}
+.titulo-jug{
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--oro);margin-top:5px;text-shadow:0 0 14px rgba(255,215,106,.5);
+}
+.titulo-jug span{color:var(--tenue2)}
+
+.rango-caja{
+  flex:none;text-align:center;padding:8px 20px 10px;
+  border:1px solid var(--linea);background:rgba(3,8,22,.7);position:relative;min-width:112px;
+}
+.rango-caja .lbl{font-family:var(--mono);font-size:8.5px;letter-spacing:.28em;color:var(--tenue);text-transform:uppercase}
+.rango-caja .r{
+  font-family:var(--display);font-size:56px;line-height:.95;color:var(--cian);
+  text-shadow:0 0 30px rgba(79,227,255,.85);letter-spacing:-.02em;
+}
+.rango-caja .rn{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;color:var(--tenue2);text-transform:uppercase;margin-top:2px}
+
+/* Barra de nivel / XP */
+.nivel-fila{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
+.nivel-badge{
+  font-family:var(--display);font-size:15px;letter-spacing:.06em;color:#02040c;
+  background:linear-gradient(180deg,var(--cian-suave),var(--azul));
+  padding:5px 14px;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 0 22px -4px rgba(79,227,255,.8);
+}
+.xp-track{
+  flex:1 1 220px;height:16px;background:rgba(2,6,18,.9);
+  border:1px solid var(--linea);position:relative;overflow:hidden;min-width:160px;
+}
+.xp-fill{
+  position:absolute;inset:0 auto 0 0;width:0%;
+  background:linear-gradient(90deg,var(--hondo),var(--azul) 45%,var(--cian) 88%,#d9fbff);
+  box-shadow:0 0 20px rgba(79,227,255,.75);
+  transition:width .7s cubic-bezier(.2,.9,.25,1);
+}
+.xp-fill::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:translateX(-100%);animation:brillo 2.6s infinite;
+}
+@keyframes brillo{0%{transform:translateX(-100%)}55%,100%{transform:translateX(320%)}}
+.xp-txt{font-family:var(--mono);font-size:11.5px;color:var(--cian-suave);letter-spacing:.08em;white-space:nowrap}
+.xp-txt b{color:#fff}
+
+/* ---------- Layout principal ---------- */
+.layout{display:grid;grid-template-columns:196px 1fr;gap:16px;align-items:start}
+nav#menu{display:flex;flex-direction:column;gap:5px;position:sticky;top:14px}
+nav#menu button{
+  background:rgba(7,15,36,.7);border:1px solid rgba(79,196,255,.16);border-left:2px solid transparent;
+  color:var(--tenue);font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+  padding:13px 14px;text-align:left;transition:.16s;display:flex;align-items:center;gap:10px;position:relative;
+}
+nav#menu button:hover{color:var(--blanco);background:rgba(14,30,68,.8);border-left-color:rgba(79,227,255,.5)}
+nav#menu button.on{
+  color:#fff;background:linear-gradient(90deg,rgba(47,143,255,.28),rgba(10,22,52,.7));
+  border-color:var(--linea-fuerte);border-left:2px solid var(--cian);
+  box-shadow:0 0 26px -8px rgba(79,227,255,.6);
+}
+nav#menu button .ic{font-size:14px;line-height:1;opacity:.9}
+nav#menu button .badge{
+  margin-left:auto;font-size:9.5px;background:var(--cian);color:#02040c;
+  padding:1px 6px;font-weight:700;letter-spacing:.04em;
+}
+
+/* ---------- Paneles / ventanas del Sistema ---------- */
+.win{
+  border:1px solid var(--linea);position:relative;
+  background:linear-gradient(165deg,rgba(9,19,44,.9),rgba(4,9,24,.92));
+  box-shadow:0 0 0 1px rgba(79,227,255,.05),0 20px 60px -34px rgba(0,110,210,.6),
+             inset 0 1px 0 rgba(143,240,255,.1);
+  margin-bottom:16px;
+}
+.win-h{
+  display:flex;align-items:center;gap:12px;padding:14px 18px;
+  border-bottom:1px solid var(--linea);
+  background:linear-gradient(90deg,rgba(47,143,255,.16),rgba(9,19,44,.2) 60%,transparent);
+}
+.win-h h2{
+  margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--cian-suave);font-weight:700;
+}
+.win-h .sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--tenue2);text-transform:uppercase;margin-left:auto}
+.win-b{padding:18px}
+.win-b.sin{padding:0}
+
+.panel{display:none}
+.panel.on{display:block;animation:entra .32s ease}
+@keyframes entra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Barrido holográfico al aparecer */
+.win.nueva::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(79,227,255,.16),transparent);
+  animation:barrido .8s ease-out 1;
+}
+@keyframes barrido{from{transform:translateY(-100%)}to{transform:translateY(100%)}}
+
+/* ---------- Misión Diaria ---------- */
+.mision{
+  border:1px solid rgba(255,215,106,.42);position:relative;
+  background:linear-gradient(160deg,rgba(52,38,6,.5),rgba(9,19,44,.9));
+  padding:16px 18px;margin-bottom:16px;
+  box-shadow:0 0 40px -18px rgba(255,215,106,.5),inset 0 1px 0 rgba(255,215,106,.14);
+}
+.mision.completa{
+  border-color:rgba(90,255,192,.5);
+  background:linear-gradient(160deg,rgba(6,52,38,.5),rgba(9,19,44,.9));
+  box-shadow:0 0 44px -16px rgba(90,255,192,.55),inset 0 1px 0 rgba(90,255,192,.16);
+}
+.mision-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.mision-h .tag{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--oro);border:1px solid rgba(255,215,106,.4);padding:3px 9px;background:rgba(255,215,106,.08);
+}
+.mision.completa .tag{color:var(--verde);border-color:rgba(90,255,192,.45);background:rgba(90,255,192,.08)}
+.mision-h h3{margin:0;font-family:var(--display);font-size:16px;letter-spacing:.02em;text-transform:uppercase;color:#fff}
+.mision .aviso-sistema{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--peligro);
+  text-transform:uppercase;margin-top:2px;opacity:.85;
+}
+.mision.completa .aviso-sistema{color:var(--verde)}
+.mision-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:8px;margin-top:14px}
+.mchip{
+  display:flex;align-items:center;gap:9px;padding:9px 11px;cursor:pointer;
+  border:1px solid rgba(255,215,106,.2);background:rgba(2,6,18,.55);
+  font-size:13px;color:var(--tenue);transition:.16s;user-select:none;
+}
+.mchip:hover{border-color:rgba(255,215,106,.55);color:#fff;background:rgba(52,38,6,.4)}
+.mchip .bx{
+  width:15px;height:15px;flex:none;border:1.5px solid rgba(255,215,106,.5);position:relative;
+  background:rgba(0,0,0,.5);transform:rotate(45deg);transition:.16s;
+}
+.mchip.hecha{border-color:rgba(90,255,192,.45);background:rgba(6,52,38,.4);color:#dfffee}
+.mchip.hecha .bx{background:var(--verde);border-color:var(--verde);box-shadow:0 0 12px rgba(90,255,192,.8)}
+.mchip.hecha .bx::after{
+  content:"";position:absolute;left:3.5px;top:.5px;width:4px;height:8px;
+  border:solid #02150e;border-width:0 2px 2px 0;transform:rotate(43deg);
+}
+.mchip.hecha .nm{text-decoration:line-through;opacity:.75}
+
+/* ---------- Lista cronológica de tareas ---------- */
+.grupo-hora{
+  display:flex;align-items:center;gap:12px;margin:22px 0 8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--tenue2);
+}
+.grupo-hora:first-child{margin-top:0}
+.grupo-hora::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--linea),transparent)}
+.grupo-hora b{color:var(--cian);letter-spacing:.16em}
+
+.tarea{
+  display:grid;grid-template-columns:64px 22px 1fr auto;gap:12px;align-items:center;
+  padding:11px 14px;border:1px solid rgba(79,196,255,.12);border-bottom:0;
+  background:rgba(5,11,28,.6);transition:.16s;position:relative;
+}
+.tarea:last-child{border-bottom:1px solid rgba(79,196,255,.12)}
+.tarea:hover{background:rgba(12,26,60,.75);border-color:rgba(79,227,255,.3)}
+.tarea.hecha{background:rgba(6,32,28,.32)}
+.tarea.hecha .nm{color:var(--tenue);text-decoration:line-through;text-decoration-color:rgba(90,255,192,.5)}
+.tarea.pasada:not(.hecha){opacity:.55}
+.tarea.pasada:not(.hecha)::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--peligro);opacity:.7;
+}
+.tarea .hora{
+  font-family:var(--mono);font-size:13px;color:var(--cian);letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;text-align:center;
+}
+.tarea.hecha .hora{color:var(--verde)}
+.tarea .chk{
+  width:20px;height:20px;border:1.5px solid rgba(79,196,255,.5);background:rgba(0,0,0,.5);
+  cursor:pointer;position:relative;transition:.16s;flex:none;transform:rotate(45deg);
+}
+.tarea .chk:hover{border-color:var(--cian);box-shadow:0 0 14px rgba(79,227,255,.6)}
+.tarea.hecha .chk{background:var(--verde);border-color:var(--verde);box-shadow:0 0 16px rgba(90,255,192,.75)}
+.tarea.hecha .chk::after{
+  content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
+  border:solid #02150e;border-width:0 2px 2px 0;transform:rotate(43deg);
+}
+.tarea .cuerpo{min-width:0}
+.tarea .nm{font-size:14.4px;color:var(--blanco);line-height:1.35;word-break:break-word}
+.tarea .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.tarea .cat{
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  padding:1.5px 7px;border:1px solid;opacity:.95;
+}
+.tarea .xp{font-family:var(--mono);font-size:10px;color:var(--oro);letter-spacing:.06em}
+.tarea .st{font-family:var(--mono);font-size:9px;color:var(--tenue2);letter-spacing:.12em;text-transform:uppercase}
+.tarea .min-tag{
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--oro);
+  border:1px solid rgba(255,215,106,.4);padding:1px 5px;text-transform:uppercase;
+}
+.tarea .acc{display:flex;gap:5px;opacity:0;transition:.16s}
+.tarea:hover .acc,.tarea:focus-within .acc{opacity:1}
+.tarea .acc button{
+  background:rgba(2,6,18,.8);border:1px solid var(--linea);color:var(--tenue);
+  width:26px;height:26px;font-size:12px;line-height:1;transition:.15s;padding:0;
+}
+.tarea .acc button:hover{color:#fff;border-color:var(--cian);background:rgba(47,143,255,.25)}
+.tarea .acc button.del:hover{color:#fff;border-color:var(--peligro);background:rgba(255,77,106,.25)}
+@media (max-width:620px){
+  .tarea{grid-template-columns:52px 20px 1fr;gap:9px;padding:10px 11px}
+  .tarea .acc{grid-column:1/-1;opacity:1;justify-content:flex-end;margin-top:4px}
+}
+
+/* ---------- Atributos ---------- */
+.attr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px}
+.attr{
+  border:1px solid var(--linea);background:rgba(4,10,26,.72);padding:14px;position:relative;overflow:hidden;
+}
+.attr::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--c);opacity:.75}
+.attr .top{display:flex;align-items:baseline;gap:8px}
+.attr .ab{font-family:var(--display);font-size:22px;color:var(--c);line-height:1;text-shadow:0 0 18px var(--c)}
+.attr .nb{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--tenue);text-transform:uppercase}
+.attr .vv{margin-left:auto;font-family:var(--mono);font-size:24px;color:#fff;font-weight:700}
+.attr .bar{height:5px;background:rgba(255,255,255,.07);margin-top:11px;position:relative;overflow:hidden}
+.attr .bar i{position:absolute;inset:0 auto 0 0;background:var(--c);box-shadow:0 0 12px var(--c);transition:width .6s}
+.attr .ds{font-size:11.5px;color:var(--tenue2);margin-top:8px;line-height:1.4}
+.attr .pts{
+  position:absolute;right:10px;bottom:9px;font-family:var(--mono);font-size:9px;
+  color:var(--oro);letter-spacing:.1em;
+}
+
+.puntos-libres{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 16px;margin-bottom:14px;
+  border:1px solid rgba(255,215,106,.4);background:linear-gradient(90deg,rgba(52,38,6,.5),rgba(9,19,44,.6));
+}
+.puntos-libres .n{font-family:var(--display);font-size:28px;color:var(--oro);text-shadow:0 0 20px rgba(255,215,106,.7);line-height:1}
+.puntos-libres .t{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--oro)}
+.puntos-libres .d{font-size:13px;color:var(--tenue);flex:1 1 200px}
+.attr-btn{
+  background:rgba(255,215,106,.14);border:1px solid rgba(255,215,106,.5);color:var(--oro);
+  width:24px;height:24px;font-size:15px;line-height:1;font-weight:700;transition:.15s;padding:0;
+}
+.attr-btn:hover{background:var(--oro);color:#1a1200}
+.attr-btn[disabled]{opacity:.2;cursor:not-allowed}
+
+/* ---------- Métricas ---------- */
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:11px}
+.k{
+  border:1px solid var(--linea);background:rgba(4,10,26,.7);padding:14px 15px;text-align:left;position:relative;overflow:hidden;
+}
+.k::after{content:"";position:absolute;right:-14px;bottom:-14px;width:52px;height:52px;
+  border:1px solid var(--linea);transform:rotate(45deg);opacity:.5}
+.k .lb{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--tenue2)}
+.k .vl{font-family:var(--display);font-size:29px;color:#fff;line-height:1.1;margin-top:7px;letter-spacing:-.01em}
+.k .vl.c{color:var(--cian);text-shadow:0 0 20px rgba(79,227,255,.55)}
+.k .vl.o{color:var(--oro);text-shadow:0 0 20px rgba(255,215,106,.5)}
+.k .vl.g{color:var(--verde);text-shadow:0 0 20px rgba(90,255,192,.5)}
+.k .sm{font-size:11px;color:var(--tenue2);margin-top:3px}
+
+/* ---------- Rejilla semanal ---------- */
+.sem{display:grid;grid-template-columns:minmax(120px,1.6fr) repeat(7,minmax(38px,1fr));gap:5px;align-items:center}
+.sem .hd{
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tenue2);text-align:center;padding-bottom:5px;
+}
+.sem .hd.hoy{color:var(--cian);text-shadow:0 0 12px rgba(79,227,255,.7)}
+.sem .rn{
+  font-size:11.5px;color:var(--tenue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-right:6px;display:flex;align-items:center;gap:6px;
+}
+.sem .rn i{width:6px;height:6px;flex:none;transform:rotate(45deg)}
+.cel{
+  aspect-ratio:1/1;min-height:30px;border:1px solid rgba(79,196,255,.14);background:rgba(3,8,20,.7);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;
+  color:var(--tenue2);cursor:pointer;transition:.14s;
+}
+.cel:hover{border-color:var(--cian);background:rgba(47,143,255,.16)}
+.cel.ok{background:linear-gradient(160deg,rgba(90,255,192,.3),rgba(20,90,70,.28));border-color:rgba(90,255,192,.5);color:#c9ffee}
+.cel.hoy-c{box-shadow:0 0 0 1px var(--cian),0 0 16px -3px rgba(79,227,255,.7)}
+@media (max-width:760px){
+  .sem{grid-template-columns:minmax(88px,1.2fr) repeat(7,minmax(28px,1fr));gap:3px}
+  .sem .rn{font-size:10px}
+}
+
+/* ---------- Objetivos ---------- */
+.obj{
+  border:1px solid var(--linea);background:rgba(5,11,28,.7);padding:14px 16px;margin-bottom:10px;
+  display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;transition:.16s;
+}
+.obj:hover{border-color:var(--linea-fuerte);background:rgba(12,26,60,.72)}
+.obj.completado{border-color:rgba(90,255,192,.42);background:rgba(6,32,28,.32)}
+.obj .nm{font-size:14.5px;color:#fff;font-weight:600}
+.obj.completado .nm{color:var(--verde)}
+.obj .ds{font-size:12.5px;color:var(--tenue2);margin-top:3px}
+.obj .pbar{height:7px;background:rgba(255,255,255,.07);margin-top:9px;position:relative;overflow:hidden;max-width:520px}
+.obj .pbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--hondo),var(--azul),var(--cian));box-shadow:0 0 14px rgba(79,227,255,.6);transition:width .5s}
+.obj.completado .pbar i{background:linear-gradient(90deg,#12705a,var(--verde));box-shadow:0 0 14px rgba(90,255,192,.6)}
+.obj .der{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.obj .xp{font-family:var(--mono);font-size:11px;color:var(--oro);white-space:nowrap}
+.obj .ctrl{display:flex;gap:5px;align-items:center}
+.obj .ctrl button{
+  background:rgba(2,6,18,.8);border:1px solid var(--linea);color:var(--tenue);
+  min-width:26px;height:26px;font-size:12px;padding:0 6px;transition:.15s;
+}
+.obj .ctrl button:hover{color:#fff;border-color:var(--cian);background:rgba(47,143,255,.25)}
+.obj .ctrl button.del:hover{border-color:var(--peligro);background:rgba(255,77,106,.22)}
+.obj .pct{font-family:var(--mono);font-size:12px;color:var(--cian-suave);min-width:44px;text-align:right}
+
+/* ---------- Títulos ---------- */
+.tit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:11px}
+.tit{
+  border:1px solid rgba(79,196,255,.14);background:rgba(4,10,26,.7);padding:14px;
+  display:flex;gap:12px;align-items:flex-start;transition:.18s;cursor:pointer;position:relative;
+}
+.tit:hover{border-color:var(--linea-fuerte);transform:translateY(-2px)}
+.tit.bloq{opacity:.4;filter:grayscale(.85);cursor:default}
+.tit.bloq:hover{transform:none;border-color:rgba(79,196,255,.14)}
+.tit.equip{border-color:var(--oro);background:linear-gradient(160deg,rgba(52,38,6,.45),rgba(4,10,26,.8));box-shadow:0 0 26px -10px rgba(255,215,106,.6)}
+.tit .ic{font-size:22px;line-height:1;flex:none;color:var(--cian);text-shadow:0 0 16px currentColor}
+.tit.equip .ic{color:var(--oro)}
+.tit .nm{font-family:var(--display);font-size:13px;text-transform:uppercase;letter-spacing:.01em;color:#fff}
+.tit .ds{font-size:11.5px;color:var(--tenue2);margin-top:4px;line-height:1.45}
+.tit .eq{position:absolute;top:9px;right:10px;font-family:var(--mono);font-size:8px;letter-spacing:.18em;color:var(--oro)}
+
+/* ---------- Botones ---------- */
+.btn{
+  background:linear-gradient(180deg,rgba(47,143,255,.3),rgba(12,40,110,.3));
+  border:1px solid var(--linea-fuerte);color:#fff;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  padding:10px 18px;transition:.17s;
+}
+.btn:hover{background:linear-gradient(180deg,rgba(79,227,255,.45),rgba(20,70,170,.45));box-shadow:0 0 24px -6px rgba(79,227,255,.8);transform:translateY(-1px)}
+.btn.oro{border-color:rgba(255,215,106,.55);background:linear-gradient(180deg,rgba(255,215,106,.22),rgba(120,88,0,.22));color:var(--oro)}
+.btn.oro:hover{background:rgba(255,215,106,.34);box-shadow:0 0 24px -6px rgba(255,215,106,.8)}
+.btn.pel{border-color:rgba(255,77,106,.5);background:rgba(255,77,106,.12);color:#ffb3c0}
+.btn.pel:hover{background:rgba(255,77,106,.28);box-shadow:0 0 24px -6px rgba(255,77,106,.7)}
+.btn.fan{background:transparent;border-color:var(--linea);color:var(--tenue)}
+.btn.fan:hover{color:#fff;border-color:var(--cian);background:rgba(47,143,255,.14)}
+.btn.sm{padding:7px 13px;font-size:9.5px}
+
+/* ---------- Formulario / modal ---------- */
+#modalFondo{
+  position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;
+  background:rgba(1,3,10,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:18px;overflow-y:auto;
+}
+#modalFondo.ab{display:flex}
+.modal{
+  width:100%;max-width:560px;border:1px solid var(--linea-fuerte);position:relative;margin:auto;
+  background:linear-gradient(165deg,rgba(11,24,56,.98),rgba(4,9,24,.99));
+  box-shadow:0 0 90px -20px rgba(79,227,255,.55);padding:26px 26px 22px;animation:entra .25s ease;
+}
+.modal h3{
+  margin:0 0 20px;font-family:var(--mono);font-size:13px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--cian-suave);
+}
+.campo{margin-bottom:15px}
+.campo label{
+  display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--tenue);margin-bottom:6px;
+}
+.campo input[type=text],.campo input[type=number],.campo input[type=time],.campo select,.campo textarea{
+  width:100%;background:rgba(2,6,18,.85);border:1px solid var(--linea);
+  padding:10px 12px;color:var(--blanco);transition:.16s;
+}
+.campo input:focus,.campo select:focus,.campo textarea:focus{
+  outline:0;border-color:var(--cian);box-shadow:0 0 0 3px rgba(79,227,255,.14);background:rgba(6,14,36,.9);
+}
+.campo textarea{resize:vertical;min-height:62px}
+.campo .fila{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk-linea{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--linea);background:rgba(2,6,18,.6);cursor:pointer;margin-bottom:7px;font-size:13.5px}
+.chk-linea:hover{border-color:var(--linea-fuerte)}
+.chk-linea input{accent-color:#4fe3ff;width:16px;height:16px}
+.modal-acc{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+.x-btn{position:absolute;top:11px;right:13px;background:none;border:0;color:var(--tenue);font-size:24px;line-height:1;padding:3px 7px}
+.x-btn:hover{color:var(--peligro)}
+
+/* ---------- Notificación del Sistema ---------- */
+#notiFondo{
+  position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;
+  background:rgba(1,3,10,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:20px;
+}
+#notiFondo.ab{display:flex}
+.noti{
+  width:100%;max-width:440px;border:1px solid var(--linea-fuerte);position:relative;text-align:center;
+  background:linear-gradient(170deg,rgba(12,28,66,.98),rgba(3,8,22,.99));
+  box-shadow:0 0 100px -18px rgba(79,227,255,.85),inset 0 1px 0 rgba(143,240,255,.2);
+  padding:34px 28px 26px;animation:notiEn .4s cubic-bezier(.16,1,.3,1);
+}
+@keyframes notiEn{from{opacity:0;transform:scale(.86) translateY(14px)}to{opacity:1;transform:none}}
+.noti.oro{border-color:rgba(255,215,106,.6);box-shadow:0 0 110px -16px rgba(255,215,106,.8),inset 0 1px 0 rgba(255,236,180,.25)}
+.noti .nh{
+  font-family:var(--mono);font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--cian);margin-bottom:16px;
+}
+.noti.oro .nh{color:var(--oro)}
+.noti .big{
+  font-family:var(--display);font-size:clamp(34px,7vw,54px);line-height:1;color:#fff;
+  text-transform:uppercase;letter-spacing:-.01em;text-shadow:0 0 34px rgba(79,227,255,.85);
+}
+.noti.oro .big{text-shadow:0 0 40px rgba(255,215,106,.9);color:var(--oro)}
+.noti .tx{font-size:14.5px;color:var(--cian-suave);margin-top:14px;line-height:1.55}
+.noti .rw{
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:18px;
+  font-family:var(--mono);font-size:12px;color:var(--oro);letter-spacing:.08em;
+}
+.noti .rw span{border:1px solid rgba(255,215,106,.32);padding:5px 11px;background:rgba(255,215,106,.07)}
+.noti .nb{margin-top:22px}
+
+/* ---------- Toast ---------- */
+#toasts{position:fixed;right:16px;bottom:16px;z-index:950;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{
+  border:1px solid var(--linea-fuerte);background:rgba(6,14,36,.96);padding:9px 15px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;color:var(--cian-suave);
+  box-shadow:0 0 30px -10px rgba(79,227,255,.7);animation:toastIn .28s ease,toastOut .4s ease 2.2s forwards;
+  display:flex;align-items:center;gap:9px;
+}
+.toast b{color:var(--oro)}
+.toast.ok{border-color:rgba(90,255,192,.5);color:#b8ffdf}
+.toast.ok b{color:var(--verde)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+
+/* ---------- XP flotante ---------- */
+.xpfloat{
+  position:fixed;z-index:960;pointer-events:none;font-family:var(--display);font-size:20px;
+  color:var(--oro);text-shadow:0 0 18px rgba(255,215,106,.9);animation:vuela 1.15s ease-out forwards;
+}
+@keyframes vuela{
+  0%{opacity:0;transform:translate(-50%,0) scale(.7)}
+  18%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}
+  100%{opacity:0;transform:translate(-50%,-72px) scale(.95)}
+}
+
+/* ---------- Destello de nivel ---------- */
+#flash{position:fixed;inset:0;z-index:990;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 45%,rgba(143,240,255,.85),rgba(47,143,255,.3) 40%,transparent 72%)}
+#flash.go{animation:flashea .85s ease-out}
+@keyframes flashea{0%{opacity:0}12%{opacity:.95}100%{opacity:0}}
+
+/* ---------- Registro ---------- */
+.log{display:flex;flex-direction:column;gap:0}
+.log-i{
+  display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:baseline;
+  padding:9px 4px;border-bottom:1px solid rgba(79,196,255,.09);font-size:13.5px;
+}
+.log-i .f{font-family:var(--mono);font-size:10px;color:var(--tenue2);letter-spacing:.08em}
+.log-i .t{color:var(--tenue)}
+.log-i .t b{color:#fff}
+.log-i .x{font-family:var(--mono);font-size:11px;color:var(--oro)}
+.log-i.nivel .t b{color:var(--cian)}
+.log-i.rango .t b{color:var(--oro)}
+.log-i.titulo .t b{color:var(--violeta)}
+
+/* ---------- Ajustes ---------- */
+.ajuste{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(79,196,255,.1);flex-wrap:wrap}
+.ajuste:last-child{border-bottom:0}
+.ajuste .info{flex:1 1 210px}
+.ajuste .info b{display:block;font-size:14px;color:#fff}
+.ajuste .info span{font-size:12.5px;color:var(--tenue2)}
+.switch{width:46px;height:24px;border:1px solid var(--linea);background:rgba(2,6,18,.9);position:relative;cursor:pointer;flex:none;transition:.2s}
+.switch i{position:absolute;top:2px;left:2px;width:18px;height:18px;background:var(--tenue2);transition:.2s}
+.switch.on{border-color:var(--cian);background:rgba(47,143,255,.24)}
+.switch.on i{left:24px;background:var(--cian);box-shadow:0 0 12px var(--cian)}
+
+.alerta{
+  border:1px solid rgba(255,77,106,.45);background:linear-gradient(90deg,rgba(255,77,106,.12),transparent);
+  padding:12px 16px;margin-bottom:14px;font-size:13.5px;color:#ffc9d3;
+}
+.alerta b{color:#fff}
+.info-box{
+  border:1px solid var(--linea);background:rgba(47,143,255,.07);
+  padding:12px 16px;margin-bottom:14px;font-size:13.5px;color:var(--tenue);
+}
+.info-box b{color:var(--cian-suave)}
+
+.vacio{text-align:center;padding:44px 20px;color:var(--tenue2);font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav#menu{position:static;flex-direction:row;overflow-x:auto;padding-bottom:6px;gap:6px}
+  nav#menu button{flex:none;padding:11px 13px;font-size:10px}
+  nav#menu button .badge{display:none}
+  #app{padding:12px 12px 80px}
+}
+@media (max-width:520px){
+  .cab-top{gap:12px}
+  .rango-caja{padding:6px 14px 8px;min-width:88px}
+  .rango-caja .r{font-size:40px}
+  #cab{padding:15px 15px 14px}
+  .win-b{padding:14px}
+  .modal{padding:22px 18px 18px}
+  .campo .fila{grid-template-columns:1fr}
+  #toasts{right:10px;left:10px;bottom:10px;align-items:stretch}
+  .toast{justify-content:center}
+}
+@media print{
+  #particulas,nav#menu,#toasts,#flash,.tarea .acc{display:none!important}
+  body{background:#fff;color:#000}
+  .win,.mision,.attr,.k,.obj{background:#fff!important;border-color:#999!important;box-shadow:none!important}
+  *{color:#000!important;text-shadow:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="particulas"></canvas>
+
+<div id="app">
+
+  <!-- ============ CABECERA ============ -->
+  <header id="cab">
+    <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+    <div class="cab-top">
+      <div class="identidad">
+        <div class="sys-tag"><span class="dot"></span> Sistema activo · Jugador registrado</div>
+        <input id="nombreJugador" value="JUGADOR" maxlength="22" spellcheck="false" aria-label="Nombre del jugador">
+        <div class="titulo-jug" id="tituloJug">— <span>sin título equipado</span></div>
+      </div>
+      <div class="rango-caja">
+        <div class="lbl">Rango</div>
+        <div class="r" id="rangoLetra">E</div>
+        <div class="rn" id="rangoNombre">Cazador</div>
+      </div>
+    </div>
+    <div class="nivel-fila">
+      <div class="nivel-badge" id="nivelBadge">NIVEL 1</div>
+      <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      <div class="xp-txt"><b id="xpActual">0</b> / <span id="xpNeces">90</span> XP</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ============ MENÚ ============ -->
+    <nav id="menu">
+      <button data-v="hoy" class="on"><span class="ic">◈</span> Hoy <span class="badge" id="bHoy">0</span></button>
+      <button data-v="status"><span class="ic">✦</span> Estado</button>
+      <button data-v="semana"><span class="ic">▦</span> Semana</button>
+      <button data-v="objetivos"><span class="ic">◇</span> Misiones <span class="badge" id="bObj">0</span></button>
+      <button data-v="titulos"><span class="ic">♛</span> Títulos <span class="badge" id="bTit">0</span></button>
+      <button data-v="registro"><span class="ic">≡</span> Registro</button>
+      <button data-v="sistema"><span class="ic">⚙</span> Sistema</button>
+    </nav>
+
+    <!-- ============ CONTENIDO ============ -->
+    <div id="contenido">
+
+      <!-- ---------- HOY ---------- -->
+      <section class="panel on" id="p-hoy">
+        <div id="alertaHoy"></div>
+
+        <div class="mision" id="misionCaja">
+          <div class="mision-h">
+            <span class="tag">Misión diaria</span>
+            <h3 id="misionTitulo">Preparación para volverse fuerte</h3>
+            <span class="tag" id="misionContador" style="margin-left:auto">0/0</span>
+          </div>
+          <div class="aviso-sistema" id="misionAviso">» El incumplimiento consumirá un Escudo de Racha. No falles dos días seguidos.</div>
+          <div class="mision-grid" id="misionGrid"></div>
+        </div>
+
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h">
+            <h2>Rutina del día</h2>
+            <span class="sub" id="fechaHoy">—</span>
+          </div>
+          <div class="win-b" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 18px">
+            <div class="kpi" style="flex:1 1 100%">
+              <div class="k"><div class="lb">Completadas</div><div class="vl c" id="kHechas">0/0</div><div class="sm" id="kPct">0%</div></div>
+              <div class="k"><div class="lb">XP hoy</div><div class="vl o" id="kXpHoy">0</div><div class="sm" id="kMult">×1.00 racha</div></div>
+              <div class="k"><div class="lb">Racha</div><div class="vl g" id="kRacha">0</div><div class="sm" id="kEscudos">0 escudos</div></div>
+              <div class="k"><div class="lb">Mejor racha</div><div class="vl" id="kMejor">0</div><div class="sm">días</div></div>
+            </div>
+            <button class="btn sm" id="btnNuevaTarea">+ Nueva tarea</button>
+            <button class="btn fan sm" id="btnReiniciarDia">Reiniciar día</button>
+          </div>
+          <div class="win-b sin" id="listaTareas"></div>
+        </div>
+      </section>
+
+      <!-- ---------- ESTADO ---------- -->
+      <section class="panel" id="p-status">
+        <div id="puntosLibresCaja"></div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Ventana de estado</h2><span class="sub">Atributos del jugador</span></div>
+          <div class="win-b">
+            <div class="attr-grid" id="attrGrid"></div>
+          </div>
+        </div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Progresión de rango</h2><span class="sub">Rango actual y siguiente</span></div>
+          <div class="win-b" id="progresionRango"></div>
+        </div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Estadísticas acumuladas</h2><span class="sub">Historial completo</span></div>
+          <div class="win-b"><div class="kpi" id="kpiAcum"></div></div>
+        </div>
+      </section>
+
+      <!-- ---------- SEMANA ---------- -->
+      <section class="panel" id="p-semana">
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h">
+            <h2>Mapa de constancia</h2>
+            <span class="sub"><button class="btn fan sm" id="btnSemPrev" style="padding:4px 9px">‹</button> <span id="semRango">—</span> <button class="btn fan sm" id="btnSemNext" style="padding:4px 9px">›</button></span>
+          </div>
+          <div class="win-b" style="overflow-x:auto"><div class="sem" id="semGrid"></div></div>
+        </div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Últimas 12 semanas</h2><span class="sub">Densidad de cumplimiento</span></div>
+          <div class="win-b" id="heatmap"></div>
+        </div>
+      </section>
+
+      <!-- ---------- OBJETIVOS ---------- -->
+      <section class="panel" id="p-objetivos">
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h">
+            <h2>Misiones de largo plazo</h2>
+            <span class="sub"><button class="btn sm" id="btnNuevoObj" style="padding:5px 12px">+ Nueva misión</button></span>
+          </div>
+          <div class="win-b" id="listaObj"></div>
+        </div>
+      </section>
+
+      <!-- ---------- TÍTULOS ---------- -->
+      <section class="panel" id="p-titulos">
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Títulos y logros</h2><span class="sub" id="titContador">0 / 0</span></div>
+          <div class="win-b">
+            <div class="info-box">Toca un título desbloqueado para <b>equiparlo</b>: aparecerá bajo tu nombre en la cabecera.</div>
+            <div class="tit-grid" id="titGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- REGISTRO ---------- -->
+      <section class="panel" id="p-registro">
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Registro del Sistema</h2><span class="sub" id="regContador">0 entradas</span></div>
+          <div class="win-b"><div class="log" id="listaLog"></div></div>
+        </div>
+      </section>
+
+      <!-- ---------- SISTEMA ---------- -->
+      <section class="panel" id="p-sistema">
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Configuración del Sistema</h2><span class="sub">Parámetros del jugador</span></div>
+          <div class="win-b" id="ajustes"></div>
+        </div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Partida guardada</h2><span class="sub">Exportar / importar</span></div>
+          <div class="win-b" id="guardado"></div>
+        </div>
+        <div class="win">
+          <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+          <div class="win-h"><h2>Cómo funciona</h2><span class="sub">Reglas del Sistema</span></div>
+          <div class="win-b" id="reglas"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<div id="flash"></div>
+
+<!-- Modal genérico -->
+<div id="modalFondo" role="dialog" aria-modal="true">
+  <div class="modal" id="modalCaja"></div>
+</div>
+
+<!-- Notificación del Sistema -->
+<div id="notiFondo" role="alertdialog" aria-modal="true">
+  <div class="noti" id="notiCaja">
+    <span class="esq tl"></span><span class="esq tr"></span><span class="esq bl"></span><span class="esq br"></span>
+    <div class="nh" id="notiHead">[ Notificación ]</div>
+    <div class="big" id="notiBig">—</div>
+    <div class="tx" id="notiTx"></div>
+    <div class="rw" id="notiRw"></div>
+    <div class="nb"><button class="btn" id="notiOk">Aceptar</button></div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept="application/json" style="display:none">
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   0 · ALMACENAMIENTO tolerante (la preview sandbox puede bloquear
+   localStorage; en ese caso se avisa y se ofrece exportar/importar)
+   ============================================================ */
+var KEY = 'sistema_jugador_v1';
+var LS = true;
+function leer(){
+  try{ var r = window.localStorage.getItem(KEY); return r ? JSON.parse(r) : null; }
+  catch(e){ LS = false; return null; }
+}
+function escribir(){
+  S.guardadoEn = Date.now();
+  try{ window.localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ LS = false; }
+}
+
+/* ============================================================
+   1 · DEFINICIONES DEL SISTEMA
+   ============================================================ */
+var STATS = {
+  FUE:{n:'Fuerza',      c:'#ff9a4d', d:'Cuerpo, gimnasio, movimiento. Lo que sostiene todo lo demás.'},
+  VIT:{n:'Vitalidad',   c:'#7ee7ff', d:'Sueño, luz, comida, descanso. El Nivel 0 de la jerarquía.'},
+  INT:{n:'Inteligencia',c:'#4fe3ff', d:'Código, proyectos, problemas resueltos. Tu oficio.'},
+  PER:{n:'Percepción',  c:'#a97bff', d:'Inglés. El multiplicador salarial y la llave del remoto.'},
+  DIS:{n:'Disciplina',  c:'#5affc0', d:'Cierres, registro, planificación, domésticas. El sistema mismo.'},
+  VOL:{n:'Voluntad',    c:'#ffd76a', d:'Resistir la distracción y sostener el ocio decidido. La más difícil.'}
+};
+var ORDEN_STATS = ['FUE','VIT','INT','PER','DIS','VOL'];
+
+var CATS = {
+  sueno:   {n:'Sueño',    st:'VIT', c:'#7ee7ff'},
+  codigo:  {n:'Código',   st:'INT', c:'#4fe3ff'},
+  ingles:  {n:'Inglés',   st:'PER', c:'#a97bff'},
+  cuerpo:  {n:'Cuerpo',   st:'FUE', c:'#ff9a4d'},
+  sistema: {n:'Sistema',  st:'DIS', c:'#5affc0'},
+  voluntad:{n:'Voluntad', st:'VOL', c:'#ffd76a'},
+  vida:    {n:'Vida',     st:'VOL', c:'#9fb4d8'},
+  otro:    {n:'Personal', st:'DIS', c:'#8fa8d8'}
+};
+
+var RANGOS = [
+  {l:1,  k:'E', n:'Rango E'},
+  {l:6,  k:'D', n:'Rango D'},
+  {l:12, k:'C', n:'Rango C'},
+  {l:22, k:'B', n:'Rango B'},
+  {l:35, k:'A', n:'Rango A'},
+  {l:50, k:'S', n:'Rango S'},
+  {l:75, k:'N', n:'Nivel Nacional'},
+  {l:100,k:'M', n:'Monarca de las Sombras'}
+];
+
+/* Protocolo de anclaje del sueño (Corrección A del documento) */
+function horaAnclaje(diaNum){
+  if(diaNum<=2)  return 660;  // 11:00
+  if(diaNum<=4)  return 630;  // 10:30
+  if(diaNum<=6)  return 600;  // 10:00
+  if(diaNum<=8)  return 570;  // 09:30
+  if(diaNum<=10) return 540;  // 09:00
+  if(diaNum<=21) return 510;  // 08:30
+  if(diaNum<=24) return 495;  // 08:15
+  if(diaNum<=27) return 480;  // 08:00
+  if(diaNum<=30) return 465;  // 07:45
+  return 450;                   // 07:30
+}
+
+/* Tareas obligatorias del sistema, ordenadas por cronología del día.
+   `off` = minutos desde la hora de despertar (se desplazan con ella).   */
+var TAREAS_BASE = [
+  {n:'Despertar — alarma al otro lado de la habitación', c:'sueno',   xp:15, off:0,   min:true},
+  {n:'Luz exterior 10–15 min (anclaje circadiano)',      c:'sueno',   xp:25, off:5,   min:true},
+  {n:'Higiene + desayuno con proteína',                  c:'sueno',   xp:10, off:20},
+  {n:'BLOQUE CÓDIGO A · deep work 90 min',               c:'codigo',  xp:70, off:45,  min:true},
+  {n:'Pausa real 15 min — fuera de la pantalla',         c:'voluntad',xp:5,  off:140},
+  {n:'Inglés base · Duolingo / Anki 15 min',             c:'ingles',  xp:25, off:155, min:true},
+  {n:'Inglés técnico · vídeo con subtítulos ES 15 min',  c:'ingles',  xp:25, off:170},
+  {n:'Gimnasio · sesión completa',                       c:'cuerpo',  xp:60, off:195, dias:[1,3,5]},
+  {n:'Movimiento · andar 25–40 min',                     c:'cuerpo',  xp:30, off:195, dias:[0,2,4,6]},
+  {n:'Comida con proteína',                              c:'sueno',   xp:10, off:340},
+  {n:'Tareas domésticas 20 min',                         c:'sistema', xp:15, off:355},
+  {n:'BLOQUE CÓDIGO B · 45–60 min',                      c:'codigo',  xp:50, off:495},
+  {n:'Commit / publicar en GitHub',                      c:'codigo',  xp:35, off:560},
+  {n:'Inglés pasivo · podcast o serie EN de fondo',      c:'ingles',  xp:15, off:575},
+  {n:'Vida social / tiempo fuera de casa',               c:'vida',    xp:20, off:660},
+  {n:'Cena sin pantalla',                                c:'sueno',   xp:10, off:765},
+  {n:'CIERRE DEL DÍA · tracker + 3 tareas de mañana',    c:'sistema', xp:40, off:825, min:true},
+  {n:'Móvil y cargador fuera del dormitorio',            c:'voluntad',xp:25, off:840, min:true},
+  {n:'Lectura en papel 20 min',                          c:'sueno',   xp:20, off:855},
+  {n:'Luz apagada a la hora fijada',                     c:'sueno',   xp:20, off:885}
+];
+
+var OBJETIVOS_BASE = [
+  {n:'Persona de rendición de cuentas', d:'Alguien a quien contarle cada domingo cómo vas. La intervención más eficaz de todo el plan.', xp:300, meta:1, u:'persona'},
+  {n:'Explicar el plan a tu familia', d:'Con horas concretas. Convertirlos en aliados, no en espectadores escépticos.', xp:200, meta:1, u:'vez'},
+  {n:'Test de ubicación de JavaScript', d:'El array de ejercicios, 30 min, sin mirar nada. Decide cuánto dura tu Etapa 1.', xp:150, meta:1, u:'test'},
+  {n:'Anclar el sueño a las 08:30', d:'Protocolo de 12 días: despertador −30 min cada 2 días. Corrección A.', xp:400, meta:12, u:'días'},
+  {n:'14 días seguidos cumpliendo el mínimo', d:'Nivel 0 · recuperar el control. Se cuenta presencia, no habilidad.', xp:400, meta:14, u:'días'},
+  {n:'30 entrenamientos', d:'Reincorporación al gimnasio completada. El objetivo es volver a ser alguien que entrena.', xp:400, meta:30, u:'sesiones'},
+  {n:'90 horas de práctica deliberada', d:'Horas reales escribiendo código, no viendo vídeos.', xp:600, meta:90, u:'horas'},
+  {n:'2.000 palabras base de inglés', d:'Anki diario. Mazo de frecuencia. Corrección B.', xp:500, meta:2000, u:'palabras'},
+  {n:'Primera conversación por voz en inglés', d:'Con IA. 5 minutos. Sin cambiar a español. Mes 3–4.', xp:300, meta:1, u:'vez'},
+  {n:'Nivel B1 de inglés', d:'Vídeos técnicos con subtítulos en inglés entendidos al 70%.', xp:700, meta:1, u:'nivel'},
+  {n:'Nivel B2 operativo', d:'El umbral profesional real. Entrevista técnica en inglés superada. Mes 17–24.', xp:1500, meta:1, u:'nivel'},
+  {n:'Proyecto 1 · Registro de entrenamiento CLI', d:'JavaScript puro en terminal + JSON local. Lo usarás de verdad.', xp:350, meta:1, u:'proyecto'},
+  {n:'Proyecto 2 · Dashboard del tiempo con API', d:'fetch, asincronía, estados de carga/error/vacío, responsive. Sin framework.', xp:400, meta:1, u:'proyecto'},
+  {n:'Proyecto 3 · App completa en React + TypeScript', d:'Multi-vista, router, estado global, diseño propio. Tu primer proyecto de verdad.', xp:600, meta:1, u:'proyecto'},
+  {n:'Proyecto 4 · Full-stack con auth y base de datos', d:'Next.js + API propia + PostgreSQL + Prisma + dominio real. El que consigue entrevistas.', xp:900, meta:1, u:'proyecto'},
+  {n:'Proyecto 5 · Nivel profesional', d:'Tests, CI/CD, Docker, Sentry, documentación y usuarios reales.', xp:1200, meta:1, u:'proyecto'},
+  {n:'Proyecto 6 · Resolver un problema real', d:'Habla con 10 personas. Pregúntales qué tarea repiten y odian.', xp:1200, meta:10, u:'conversaciones'},
+  {n:'Proyecto 7 · Primer micro-SaaS', d:'Solo tras validar con usuarios y saber desplegar. Mes 12–18.', xp:2500, meta:1, u:'producto'},
+  {n:'Contribución a código abierto', d:'Aunque sea documentación. Es la Etapa 11 y una señal enorme en 2026.', xp:450, meta:1, u:'PR'},
+  {n:'CV + LinkedIn + portfolio', d:'Superficie pública completa, en inglés y con enlaces que funcionan.', xp:500, meta:3, u:'piezas'},
+  {n:'Primera candidatura enviada', d:'Adaptada al stack de la oferta, no genérica.', xp:250, meta:1, u:'candidatura'},
+  {n:'40 candidaturas enviadas', d:'10–15 adaptadas por semana desde el mes 9.', xp:600, meta:40, u:'candidaturas'},
+  {n:'Primera entrevista técnica', d:'Da igual el resultado. Importa haber estado dentro.', xp:400, meta:1, u:'entrevista'},
+  {n:'Primer euro por tecnología', d:'Empleo, cliente o producto. Lo que sea. Cambia todo.', xp:2000, meta:1, u:'€'}
+];
+
+var TITULOS = [
+  {id:'dq1',   ic:'⬢', n:'El que se prepara',        d:'Completa tu primera Misión Diaria.',                        f:function(s){return s.misiones>=1;}},
+  {id:'r3',    ic:'△', n:'Tres días',                 d:'Racha de 3 días cumpliendo el mínimo.',                     f:function(s){return s.mejorRacha>=3;}},
+  {id:'r7',    ic:'✦', n:'Constante',                 d:'Racha de 7 días.',                                          f:function(s){return s.mejorRacha>=7;}},
+  {id:'r21',   ic:'❖', n:'Imparable',                 d:'Racha de 21 días. Aquí ya es identidad, no esfuerzo.',       f:function(s){return s.mejorRacha>=21;}},
+  {id:'r60',   ic:'♛', n:'Monarca de la disciplina',  d:'Racha de 60 días.',                                         f:function(s){return s.mejorRacha>=60;}},
+  {id:'p1',    ic:'◈', n:'Día perfecto',              d:'Completa todas las tareas de un día.',                       f:function(s){return s.perfectos>=1;}},
+  {id:'p10',   ic:'✷', n:'Perfeccionista',            d:'10 días perfectos.',                                        f:function(s){return s.perfectos>=10;}},
+  {id:'t50',   ic:'▣', n:'Cincuenta',                 d:'50 tareas completadas.',                                    f:function(s){return s.tareas>=50;}},
+  {id:'t500',  ic:'▩', n:'Quinientas',                d:'500 tareas completadas.',                                   f:function(s){return s.tareas>=500;}},
+  {id:'t2000', ic:'⬡', n:'Dos mil',                   d:'2.000 tareas completadas.',                                 f:function(s){return s.tareas>=2000;}},
+  {id:'n5',    ic:'✧', n:'Despertar',                 d:'Alcanza el nivel 5.',                                       f:function(s){return s.nivel>=5;}},
+  {id:'n10',   ic:'⚔', n:'Cazador',                   d:'Alcanza el nivel 10.',                                      f:function(s){return s.nivel>=10;}},
+  {id:'n25',   ic:'⚜', n:'Veterano',                  d:'Alcanza el nivel 25.',                                      f:function(s){return s.nivel>=25;}},
+  {id:'n50',   ic:'✵', n:'Rango S',                   d:'Alcanza el nivel 50.',                                      f:function(s){return s.nivel>=50;}},
+  {id:'c20',   ic:'⌘', n:'Cazador de código',         d:'20 bloques de código completados.',                         f:function(s){return s.cat.codigo>=20;}},
+  {id:'c100',  ic:'⚒', n:'Forjador',                  d:'100 bloques de código completados.',                        f:function(s){return s.cat.codigo>=100;}},
+  {id:'c400',  ic:'⬢', n:'Arquitecto',                d:'400 bloques de código completados.',                        f:function(s){return s.cat.codigo>=400;}},
+  {id:'g10',   ic:'⚡', n:'Hierro',                    d:'10 sesiones de movimiento o gimnasio.',                     f:function(s){return s.cat.cuerpo>=10;}},
+  {id:'g50',   ic:'⛰', n:'Cuerpo de acero',           d:'50 sesiones de movimiento o gimnasio.',                     f:function(s){return s.cat.cuerpo>=50;}},
+  {id:'i30',   ic:'✉', n:'Lengua extranjera',         d:'30 sesiones de inglés.',                                    f:function(s){return s.cat.ingles>=30;}},
+  {id:'i150',  ic:'❋', n:'Bilingüe en camino',        d:'150 sesiones de inglés.',                                   f:function(s){return s.cat.ingles>=150;}},
+  {id:'s20',   ic:'☾', n:'Ancla fijada',              d:'20 cierres de día hechos. El sistema se sostiene solo.',     f:function(s){return s.cat.sistema>=20;}},
+  {id:'v20',   ic:'⛨', n:'Dueño de su atención',      d:'20 actos de voluntad contra la distracción.',                f:function(s){return s.cat.voluntad>=20;}},
+  {id:'o1',    ic:'◆', n:'Primer artefacto',          d:'Completa tu primera misión de largo plazo.',                 f:function(s){return s.objCompletados>=1;}},
+  {id:'o5',    ic:'❖', n:'Constructor',               d:'5 misiones de largo plazo completadas.',                     f:function(s){return s.objCompletados>=5;}},
+  {id:'o12',   ic:'♜', n:'Estratega',                 d:'12 misiones de largo plazo completadas.',                    f:function(s){return s.objCompletados>=12;}},
+  {id:'x5k',   ic:'✺', n:'Acumulador',                d:'5.000 XP totales.',                                         f:function(s){return s.xp>=5000;}},
+  {id:'x50k',  ic:'❂', n:'Ascendido',                 d:'50.000 XP totales.',                                        f:function(s){return s.xp>=50000;}},
+  {id:'rec1',  ic:'↺', n:'El que vuelve',             d:'Recupérate en menos de 24 h tras un fallo. La métrica real.',f:function(s){return s.recuperaciones>=1;}},
+  {id:'rec10', ic:'⟳', n:'Antifrágil',                d:'10 recuperaciones rápidas. Ganas siempre.',                  f:function(s){return s.recuperaciones>=10;}}
+];
+
+/* ============================================================
+   2 · UTILIDADES
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, html){
+  var e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(html != null) e.innerHTML = html;
+  return e;
+}
+function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function uid(){ return 'x'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
+function fkey(d){ var z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function desdeKey(k){ var p=k.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function hoy(){ return fkey(new Date()); }
+function diaSemana(k){ return desdeKey(k).getDay(); }
+function fmtHora(min){
+  min = ((min % 1440) + 1440) % 1440;
+  var h = Math.floor(min/60), m = min%60;
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+function fmtFechaLarga(k){
+  var d = desdeKey(k);
+  return d.toLocaleDateString('es-ES',{weekday:'long', day:'numeric', month:'long'});
+}
+function fmtFechaCorta(k){
+  var d = desdeKey(k);
+  return d.toLocaleDateString('es-ES',{day:'2-digit', month:'short'});
+}
+function difDias(a,b){ return Math.round((desdeKey(b)-desdeKey(a))/86400000); }
+
+/* ============================================================
+   3 · ESTADO
+   ============================================================ */
+var S;
+function nuevoEstado(){
+  var h = hoy();
+  return {
+    v:1,
+    nombre:'JUGADOR',
+    titulo:null,
+    inicio:h,
+    wake: horaAnclaje(1),
+    xpObj:0,
+    puntosLibres:0,
+    alloc:{FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0},
+    escudos:1,
+    seguidos:0,
+    mejorRacha:0,
+    recuperaciones:0,
+    nivelVisto:1,
+    ultimoProceso:(function(){ var x=new Date(); x.setDate(x.getDate()-1); return fkey(x); })(),
+    tareas: TAREAS_BASE.map(function(t,i){
+      return {id:'b'+i, n:t.n, c:t.c, xp:t.xp, min:!!t.min, rel:true, off:t.off,
+              dias:t.dias||null, activo:true, orden:i};
+    }),
+    objetivos: OBJETIVOS_BASE.map(function(o,i){
+      return {id:'o'+i, n:o.n, d:o.d, xp:o.xp, meta:o.meta, u:o.u, prog:0, hecho:false, orden:i};
+    }),
+    titulos:[],
+    dias:{},
+    log:[],
+    cfg:{sonido:true, autoAnclaje:true, alerta:true}
+  };
+}
+S = leer() || nuevoEstado();
+
+/* migración defensiva */
+(function(){
+  var d = nuevoEstado();
+  for(var k in d){ if(S[k]===undefined) S[k]=d[k]; }
+  for(var a in d.alloc){ if(S.alloc[a]===undefined) S.alloc[a]=0; }
+  if(!S.cfg) S.cfg = d.cfg;
+  for(var c in d.cfg){ if(S.cfg[c]===undefined) S.cfg[c]=d.cfg[c]; }
+  if(!Array.isArray(S.titulos)) S.titulos=[];
+  if(!Array.isArray(S.log)) S.log=[];
+})();
+
+function dia(k){
+  if(!S.dias[k]) S.dias[k] = {hechas:{}, xp:0, minTotal:0, mision:false, total:0, hechasN:0, perfecto:false, stats:{FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0}, cat:{}, escudado:false, procesado:false};
+  var d = S.dias[k];
+  if(!d.stats) d.stats={FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0};
+  if(!d.cat) d.cat={};
+  return d;
+}
+
+/* ---- tareas aplicables a un día concreto ---- */
+function tareasActivas(){ return S.tareas.filter(function(t){return t.activo;}); }
+function aplica(t, k){
+  if(!t.dias) return true;
+  return t.dias.indexOf(diaSemana(k)) !== -1;
+}
+function tareasDelDia(k){
+  return tareasActivas().filter(function(t){ return aplica(t,k); })
+    .sort(function(a,b){
+      var ha = a.rel ? S.wake + a.off : a.off;
+      var hb = b.rel ? S.wake + b.off : b.off;
+      return ha - hb || a.orden - b.orden;
+    });
+}
+function horaDe(t){ return t.rel ? S.wake + t.off : t.off; }
+
+/* ---- XP y nivel ---- */
+function xpNecesario(n){ return Math.floor(90 + (n-1)*55 + Math.pow(n-1,2)*9); }
+function xpTotal(){
+  var t = S.xpObj;
+  for(var k in S.dias) t += (S.dias[k].xp||0);
+  return t;
+}
+function nivelDe(xp){
+  var n=1, resto=xp, acc=0;
+  while(n<300 && resto >= xpNecesario(n)){ resto -= xpNecesario(n); acc += xpNecesario(n); n++; }
+  return {nivel:n, actual:resto, neces:xpNecesario(n), acumulado:acc};
+}
+function rangoDe(nivel){
+  var r = RANGOS[0];
+  for(var i=0;i<RANGOS.length;i++){ if(nivel >= RANGOS[i].l) r = RANGOS[i]; }
+  return r;
+}
+function siguienteRango(nivel){
+  for(var i=0;i<RANGOS.length;i++){ if(nivel < RANGOS[i].l) return RANGOS[i]; }
+  return null;
+}
+function rachaActual(){
+  var r=0, d=new Date();
+  var hk = hoy();
+  var dd = dia(hk);
+  if(!dd.mision) d.setDate(d.getDate()-1);
+  for(var i=0;i<800;i++){
+    var k = fkey(d), x = S.dias[k];
+    if(x && (x.mision || x.escudado)){ r++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return r;
+}
+function multiplicador(){ return 1 + Math.min(rachaActual(), 25) * 0.02; }
+
+function resumenGlobal(){
+  var tareas=0, perfectos=0, misiones=0, xp=xpTotal(), cat={}, diasReg=0;
+  for(var c in CATS) cat[c]=0;
+  for(var k in S.dias){
+    var d=S.dias[k];
+    var n=0; for(var id in d.hechas) if(d.hechas[id]) n++;
+    tareas += n;
+    if(d.perfecto) perfectos++;
+    if(d.mision) misiones++;
+    if(n>0) diasReg++;
+    for(var cc in d.cat) cat[cc]=(cat[cc]||0)+(d.cat[cc]||0);
+  }
+  var nv = nivelDe(xp);
+  var objC = S.objetivos.filter(function(o){return o.hecho;}).length;
+  return {tareas:tareas, perfectos:perfectos, misiones:misiones, xp:xp, cat:cat,
+          diasReg:diasReg, nivel:nv.nivel, objCompletados:objC,
+          mejorRacha:S.mejorRacha, recuperaciones:S.recuperaciones};
+}
+function statsTotales(){
+  var r={FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0};
+  for(var k in S.dias){ var st=S.dias[k].stats; for(var a in st) r[a]=(r[a]||0)+(st[a]||0); }
+  for(var b in S.alloc) r[b]=(r[b]||0)+S.alloc[b];
+  return r;
+}
+
+/* ============================================================
+   4 · RECALCULAR UN DÍA
+   ============================================================ */
+function recalcDia(k){
+  var d = dia(k);
+  var lista = tareasDelDia(k);
+  var mins = lista.filter(function(t){return t.min;});
+  var hechas = lista.filter(function(t){ return d.hechas[t.id]; });
+
+  d.total = lista.length;
+  d.hechasN = hechas.length;
+  d.minTotal = mins.length;
+  var misionAntes = d.mision, perfectoAntes = d.perfecto;
+  d.mision = mins.length > 0 && mins.every(function(t){ return d.hechas[t.id]; });
+  d.perfecto = lista.length > 0 && hechas.length === lista.length;
+
+  var base = hechas.reduce(function(a,t){ return a + (t.xp||0); }, 0);
+  if(d.mision) base += 60;
+  if(d.perfecto) base += 120;
+  d.mult = (k === hoy()) ? multiplicador() : (d.mult || 1);
+  d.xp = Math.round(base * d.mult);
+
+  var st={FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0}, cat={};
+  hechas.forEach(function(t){
+    var c = CATS[t.c] || CATS.otro;
+    st[c.st] = (st[c.st]||0) + Math.max(1, Math.round((t.xp||10)/22));
+    cat[t.c] = (cat[t.c]||0) + 1;
+  });
+  d.stats = st; d.cat = cat;
+
+  return {nuevaMision:d.mision, eraMision:misionAntes, nuevoPerfecto:d.perfecto, eraPerfecto:perfectoAntes};
+}
+
+/* ============================================================
+   5 · EFECTOS: sonido, partículas, avisos
+   ============================================================ */
+var AC = null;
+function audio(){
+  if(!S.cfg.sonido) return null;
+  try{ AC = AC || new (window.AudioContext||window.webkitAudioContext)(); return AC; }catch(e){ return null; }
+}
+function tono(freq, ini, dur, vol, tipo){
+  var c = audio(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type = tipo||'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(c.destination);
+    var t0 = c.currentTime + ini;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.09, t0+0.014);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.start(t0); o.stop(t0+dur+0.05);
+  }catch(e){}
+}
+function sfxTarea(){ tono(784,0,.13,.07,'triangle'); tono(1175,.07,.16,.05,'triangle'); }
+function sfxQuitar(){ tono(330,0,.12,.05,'sine'); }
+function sfxMision(){ [523,659,784,1047].forEach(function(f,i){ tono(f,i*.085,.34,.075,'triangle'); }); }
+function sfxNivel(){ [392,523,659,784,1047,1319].forEach(function(f,i){ tono(f,i*.075,.5,.08,'square'); }); }
+function sfxRango(){ [261,392,523,784,1047,1568].forEach(function(f,i){ tono(f,i*.11,.85,.09,'sawtooth'); }); }
+function sfxTitulo(){ tono(880,0,.2,.06,'sine'); tono(1320,.12,.4,.05,'sine'); }
+
+function toast(txt, ok){
+  var t = el('div','toast'+(ok?' ok':''), txt);
+  $('toasts').appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 2700);
+}
+function xpFloat(x, y, txt){
+  var f = el('div','xpfloat', txt);
+  f.style.left = x+'px'; f.style.top = y+'px';
+  document.body.appendChild(f);
+  setTimeout(function(){ if(f.parentNode) f.parentNode.removeChild(f); }, 1200);
+}
+function flash(){
+  var f = $('flash'); f.classList.remove('go');
+  void f.offsetWidth; f.classList.add('go');
+}
+
+var colaNoti = [];
+function notificar(o){ colaNoti.push(o); if(colaNoti.length===1) mostrarNoti(); }
+function mostrarNoti(){
+  var o = colaNoti[0]; if(!o) return;
+  var caja = $('notiCaja');
+  caja.className = 'noti' + (o.oro ? ' oro' : '');
+  $('notiHead').textContent = o.head || '[ Notificación ]';
+  $('notiBig').innerHTML = o.big || '';
+  $('notiTx').innerHTML = o.tx || '';
+  $('notiRw').innerHTML = (o.rw||[]).map(function(r){ return '<span>'+esc(r)+'</span>'; }).join('');
+  $('notiFondo').classList.add('ab');
+  if(o.oro) flash();
+  if(o.sfx === 'nivel') sfxNivel();
+  else if(o.sfx === 'rango') sfxRango();
+  else if(o.sfx === 'titulo') sfxTitulo();
+  else if(o.sfx === 'mision') sfxMision();
+}
+function cerrarNoti(){
+  $('notiFondo').classList.remove('ab');
+  colaNoti.shift();
+  setTimeout(function(){ if(colaNoti.length) mostrarNoti(); }, 220);
+}
+$('notiOk').addEventListener('click', cerrarNoti);
+$('notiFondo').addEventListener('click', function(e){ if(e.target === $('notiFondo')) cerrarNoti(); });
+
+/* ---- partículas de fondo ---- */
+(function(){
+  var cv = $('particulas');
+  if(!cv) return;
+  var cx = null;
+  try{ cx = cv.getContext('2d'); }catch(err){ cx = null; }
+  if(!cx){ cv.style.display = 'none'; return; }   /* entorno sin canvas: el Sistema sigue funcionando */
+  var P = [];
+  function dim(){ cv.width = innerWidth; cv.height = innerHeight; }
+  dim(); addEventListener('resize', dim);
+  for(var i=0;i<58;i++) P.push({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.7+.4, v:Math.random()*.28+.06,
+    a:Math.random()*.5+.12, o:Math.random()*Math.PI*2
+  });
+  (function loop(){
+    if(!cx) return;
+    cx.clearRect(0,0,cv.width,cv.height);
+    for(var i=0;i<P.length;i++){
+      var p=P[i];
+      p.y -= p.v; p.o += .012;
+      if(p.y < -8){ p.y = cv.height+8; p.x = Math.random()*cv.width; }
+      var al = p.a * (.55 + .45*Math.sin(p.o));
+      cx.beginPath();
+      cx.arc(p.x + Math.sin(p.o)*9, p.y, p.r, 0, 6.2832);
+      cx.fillStyle = 'rgba(120,215,255,'+al.toFixed(3)+')';
+      cx.shadowBlur = 9; cx.shadowColor = 'rgba(79,227,255,.85)';
+      cx.fill();
+    }
+    cx.shadowBlur = 0;
+    if(window.requestAnimationFrame) requestAnimationFrame(loop); else setTimeout(loop, 40);
+  })();
+})();
+
+/* ============================================================
+   6 · PROCESAR DÍAS PASADOS (racha, escudos, recuperación)
+   ============================================================ */
+function procesarPasados(){
+  var avisos = [];
+  var ayer = new Date(); ayer.setDate(ayer.getDate()-1);
+  var ayerK = fkey(ayer);
+
+  /* punto de partida acotado: no se recorre todo el histórico en cada carga.
+     El día de inicio NUNCA se procesa como fallo: el jugador empezó a mitad del día. */
+  var desde = desdeKey(S.inicio); desde.setDate(desde.getDate()+1);
+  if(S.ultimoProceso){
+    var up = desdeKey(S.ultimoProceso); up.setDate(up.getDate()-2);
+    if(up > desde) desde = up;
+  }
+  if(desde > ayer) return avisos;
+
+  /* estado del día previo al punto de partida, para detectar recuperaciones */
+  var prevK = fkey(new Date(desde.getTime()-86400000));
+  var prev = S.dias[prevK];
+  var falloPrevio = prev ? !(prev.mision || prev.escudado) : false;
+
+  var cursor = new Date(desde);
+  var seguidosLocal = S.seguidos || 0;
+  var guarda = 0;
+
+  while(cursor <= ayer && guarda < 1200){
+    guarda++;
+    var k = fkey(cursor);
+    var d = S.dias[k];
+
+    if(d && d.procesado){
+      falloPrevio = !(d.mision || d.escudado);
+      if(d.mision) seguidosLocal++; else seguidosLocal = 0;
+      cursor.setDate(cursor.getDate()+1);
+      continue;
+    }
+
+    if(!d){
+      /* día sin abrir el Sistema: se registra como incumplido */
+      d = dia(k);
+      recalcDia(k);
+    } else {
+      recalcDia(k);
+    }
+
+    if(d.mision){
+      seguidosLocal++;
+      /* RECUPERACIÓN: volviste a cumplir tras un día fallido. La métrica real del plan. */
+      if(falloPrevio){
+        S.recuperaciones = (S.recuperaciones||0) + 1;
+        avisos.push({head:'[ Recuperación detectada ]', big:'HAS VUELTO',
+          tx:'Fallaste un día y volviste al siguiente.<br><strong>Esa es la única métrica que importa de verdad.</strong>',
+          rw:['Recuperaciones: '+S.recuperaciones], oro:true, sfx:'titulo'});
+      }
+      falloPrevio = false;
+      if(seguidosLocal % 7 === 0 && S.escudos < 3){
+        S.escudos++;
+        avisos.push({head:'[ Recompensa ]', big:'+1 ESCUDO',
+          tx:'7 días seguidos cumpliendo la Misión Diaria.<br>Un Escudo de Racha protegerá tu racha el próximo día que falles.',
+          rw:['Escudos: '+S.escudos+' / 3'], oro:true, sfx:'titulo'});
+      }
+    } else {
+      falloPrevio = true;
+      seguidosLocal = 0;
+      if(S.escudos > 0){
+        S.escudos--;
+        d.escudado = true;
+        avisos.push({head:'[ Penalización evitada ]', big:'ESCUDO USADO',
+          tx:'No completaste la Misión Diaria el '+fmtFechaLarga(k)+'.<br>Un Escudo de Racha la ha protegido: <strong>tu racha sigue intacta</strong>.',
+          rw:['Escudos restantes: '+S.escudos], oro:false});
+      } else if(d.total > 0 || d.hechasN > 0){
+        avisos.push({head:'[ Penalización ]', big:'RACHA ROTA',
+          tx:'No completaste la Misión Diaria el '+fmtFechaLarga(k)+' y no quedaban escudos.<br><br><strong>Regla R8: no se fallan dos días seguidos.</strong> Ejecuta hoy el Día Mínimo Viable.',
+          rw:['Regla R8 activada'], oro:false});
+      }
+    }
+    d.procesado = true;
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  S.seguidos = seguidosLocal;
+  S.ultimoProceso = ayerK;
+  var r = rachaActual();
+  if(r > S.mejorRacha) S.mejorRacha = r;
+  return avisos;
+}
+
+/* ============================================================
+   7 · SINCRONIZAR NIVEL / RANGO / TÍTULOS
+   ============================================================ */
+function registrar(tipo, txt, xp){
+  S.log.unshift({f:hoy(), t:Date.now(), tipo:tipo, txt:txt, xp:xp||0});
+  if(S.log.length > 400) S.log.length = 400;
+}
+function sincronizar(evt){
+  var xp = xpTotal();
+  var nv = nivelDe(xp);
+  var antes = S.nivelVisto;
+
+  if(nv.nivel > antes){
+    var ganados = (nv.nivel - antes) * 3;
+    S.puntosLibres += ganados;
+    var rAntes = rangoDe(antes), rAhora = rangoDe(nv.nivel);
+    registrar('nivel', 'Subiste a <b>nivel '+nv.nivel+'</b>', 0);
+    notificar({head:'[ Notificación del Sistema ]', big:'NIVEL '+nv.nivel,
+      tx:'Has subido de nivel.<br>Se otorgan puntos de atributo para distribuir.',
+      rw:['+'+ganados+' puntos de atributo'], oro:true, sfx:'nivel'});
+    if(rAhora.k !== rAntes.k){
+      registrar('rango', 'Ascenso a <b>Rango '+rAhora.k+'</b> — '+esc(rAhora.n), 0);
+      notificar({head:'[ Ascenso de Rango ]', big:'RANGO '+rAhora.k,
+        tx:'Has sido reclasificado.<br><strong>'+esc(rAhora.n)+'</strong>',
+        rw:['Rango '+rAntes.k+' → Rango '+rAhora.k], oro:true, sfx:'rango'});
+    }
+    S.nivelVisto = nv.nivel;
+  }
+
+  /* títulos */
+  var g = resumenGlobal();
+  TITULOS.forEach(function(t){
+    if(S.titulos.indexOf(t.id) !== -1) return;
+    if(t.f(g)){
+      S.titulos.push(t.id);
+      registrar('titulo', 'Título desbloqueado: <b>'+esc(t.n)+'</b>', 0);
+      notificar({head:'[ Título adquirido ]', big:t.ic+' '+t.n.toUpperCase(),
+        tx:esc(t.d)+'<br>Puedes equiparlo desde la pestaña <strong>Títulos</strong>.',
+        rw:['+1 título'], oro:true, sfx:'titulo'});
+    }
+  });
+
+  if(evt) registrar(evt.tipo, evt.txt, evt.xp||0);
+}
+
+/* ============================================================
+   8 · ACCIONES
+   ============================================================ */
+function marcar(id, k, ev){
+  k = k || hoy();
+  var d = dia(k);
+  var t = S.tareas.filter(function(x){return x.id===id;})[0];
+  if(!t) return;
+  var ya = !!d.hechas[id];
+  if(ya) delete d.hechas[id]; else d.hechas[id] = true;
+
+  var res = recalcDia(k);
+  if(k === hoy()){
+    if(!ya && t.xp){
+      var gan = Math.round(t.xp * d.mult);
+      if(ev) xpFloat(ev.clientX, ev.clientY-14, '+'+gan+' XP');
+      sfxTarea();
+      toast((ya?'':'✓ ') + '<b>+'+gan+' XP</b> · '+esc(t.n.slice(0,34)), true);
+    } else { sfxQuitar(); }
+
+    if(res.nuevaMision && !res.eraMision){
+      var r = rachaActual(); if(r>S.mejorRacha) S.mejorRacha=r;
+      notificar({head:'[ Misión Diaria completada ]', big:'MISIÓN<br>CUMPLIDA',
+        tx:'Has completado el mínimo del día.<br><strong>Esto es lo único que no se negocia.</strong>',
+        rw:['+60 XP','Racha: '+r+' días','×'+multiplicador().toFixed(2)+' multiplicador'], oro:true, sfx:'mision'});
+      registrar('mision','Misión Diaria completada', 60);
+    }
+    if(res.nuevoPerfecto && !res.eraPerfecto){
+      notificar({head:'[ Logro ]', big:'DÍA PERFECTO',
+        tx:'Completaste <strong>todas</strong> las tareas del día.<br>Bonificación otorgada.',
+        rw:['+120 XP'], oro:true, sfx:'nivel'});
+      registrar('perfecto','Día perfecto completado',120);
+    }
+  }
+  sincronizar();
+  escribir();
+  pintarTodo();
+}
+
+function completarObj(id, delta){
+  var o = S.objetivos.filter(function(x){return x.id===id;})[0];
+  if(!o) return;
+  if(o.hecho){ o.hecho=false; o.prog=Math.max(0,o.meta-1); S.xpObj=Math.max(0,S.xpObj-o.xp); }
+  o.prog = Math.max(0, Math.min(o.meta, o.prog + delta));
+  if(o.prog >= o.meta && !o.hecho){
+    o.hecho = true; S.xpObj += o.xp;
+    registrar('objetivo','Misión completada: <b>'+esc(o.n)+'</b>', o.xp);
+    notificar({head:'[ Misión completada ]', big:'OBJETIVO<br>CUMPLIDO',
+      tx:'<strong>'+esc(o.n)+'</strong><br>'+esc(o.d||''),
+      rw:['+'+o.xp+' XP'], oro:true, sfx:'nivel'});
+  }
+  sincronizar(); escribir(); pintarTodo();
+}
+
+/* ============================================================
+   9 · PINTAR
+   ============================================================ */
+function pintarCabecera(){
+  var xp = xpTotal(), nv = nivelDe(xp), r = rangoDe(nv.nivel);
+  $('nombreJugador').value = S.nombre;
+  $('nivelBadge').textContent = 'NIVEL '+nv.nivel;
+  $('xpFill').style.width = Math.min(100, (nv.actual/nv.neces)*100)+'%';
+  $('xpActual').textContent = nv.actual.toLocaleString('es-ES');
+  $('xpNeces').textContent = nv.neces.toLocaleString('es-ES');
+  $('rangoLetra').textContent = r.k;
+  $('rangoNombre').textContent = r.n;
+  var t = S.titulo ? TITULOS.filter(function(x){return x.id===S.titulo;})[0] : null;
+  $('tituloJug').innerHTML = t ? (t.ic+' «'+esc(t.n)+'»') : '— <span>sin título equipado</span>';
+  $('bHoy').textContent = dia(hoy()).hechasN || 0;
+  $('bObj').textContent = S.objetivos.filter(function(o){return !o.hecho;}).length;
+  $('bTit').textContent = S.titulos.length;
+}
+
+function franja(min){
+  if(min < 300) return 'Madrugada';
+  if(min < 720) return 'Mañana';
+  if(min < 840) return 'Mediodía';
+  if(min < 1080) return 'Tarde';
+  if(min < 1290) return 'Noche';
+  return 'Cierre';
+}
+
+function pintarHoy(){
+  var k = hoy();
+  recalcDia(k);
+  var d = S.dias[k];
+  var lista = tareasDelDia(k);
+  var mins = lista.filter(function(t){return t.min;});
+  var minsHechas = mins.filter(function(t){return d.hechas[t.id];});
+
+  /* --- Misión diaria --- */
+  var caja = $('misionCaja');
+  caja.classList.toggle('completa', d.mision);
+  $('misionContador').textContent = minsHechas.length+'/'+mins.length;
+  $('misionAviso').innerHTML = d.mision
+    ? '» Misión cumplida. Racha de <strong>'+rachaActual()+'</strong> días · multiplicador ×'+multiplicador().toFixed(2)+' · '+S.escudos+' escudo(s) disponible(s).'
+    : '» El incumplimiento consumirá un Escudo de Racha. <strong>Regla R8: no se fallan dos días seguidos.</strong>';
+  $('misionGrid').innerHTML = mins.map(function(t){
+    return '<div class="mchip'+(d.hechas[t.id]?' hecha':'')+'" data-min="'+t.id+'"><span class="bx"></span><span class="nm">'+esc(t.n)+'</span></div>';
+  }).join('') || '<div style="color:var(--tenue2);font-size:13px">No hay tareas marcadas como Misión Diaria.</div>';
+
+  /* --- KPIs --- */
+  $('fechaHoy').textContent = fmtFechaLarga(k);
+  $('kHechas').textContent = d.hechasN+'/'+d.total;
+  $('kPct').textContent = d.total ? Math.round(d.hechasN/d.total*100)+'%' : '0%';
+  $('kXpHoy').textContent = (d.xp||0).toLocaleString('es-ES');
+  var r = rachaActual();
+  $('kMult').textContent = '×'+multiplicador().toFixed(2)+' racha';
+  $('kRacha').textContent = r;
+  $('kEscudos').textContent = S.escudos+' escudo'+(S.escudos===1?'':'s');
+  $('kMejor').textContent = S.mejorRacha;
+
+  /* --- alerta superior --- */
+  var al = [];
+  if(!LS) al.push('<div class="alerta"><b>Aviso del Sistema:</b> este entorno bloquea el guardado automático (vista previa aislada). Tu progreso sigue funcionando, pero <b>descarga el archivo y ábrelo en tu navegador</b> para que se guarde solo, o usa <b>Sistema → Exportar partida</b>.</div>');
+  var dn = difDias(S.inicio, k) + 1;
+  if(S.cfg.autoAnclaje && dn <= 31){
+    var ha = horaAnclaje(dn);
+    if(S.wake !== ha) al.push('<div class="info-box"><b>Día '+dn+' del protocolo de anclaje.</b> Tu hora de despertar objetivo hoy es <b>'+fmtHora(ha)+'</b> (actual: '+fmtHora(S.wake)+'). <button class="btn sm" id="btnAnclar" style="margin-left:8px">Aplicar '+fmtHora(ha)+'</button></div>');
+    else al.push('<div class="info-box"><b>Día '+dn+' del protocolo de anclaje.</b> Despertador fijado a <b>'+fmtHora(ha)+'</b>. Todo el día se ha desplazado con él. Luz exterior en los primeros 15 minutos.</div>');
+  }
+  $('alertaHoy').innerHTML = al.join('');
+  var ba = $('btnAnclar');
+  if(ba) ba.addEventListener('click', function(){ S.wake = horaAnclaje(dn); escribir(); pintarTodo(); toast('Despertador fijado a <b>'+fmtHora(S.wake)+'</b>'); });
+
+  /* --- lista cronológica --- */
+  var ahora = new Date();
+  var minActual = ahora.getHours()*60 + ahora.getMinutes();
+  var html = '', franjaAct = null;
+  lista.forEach(function(t){
+    var h = horaDe(t);
+    var f = franja(h);
+    if(f !== franjaAct){ html += '<div class="grupo-hora"><b>'+f+'</b> · desde '+fmtHora(h)+'</div>'; franjaAct = f; }
+    var hecha = !!d.hechas[t.id];
+    var c = CATS[t.c] || CATS.otro;
+    var pasada = !hecha && h + 45 < minActual;
+    html += '<div class="tarea'+(hecha?' hecha':'')+(pasada?' pasada':'')+'" data-id="'+t.id+'">'
+      + '<div class="hora">'+fmtHora(h)+'</div>'
+      + '<div class="chk" role="checkbox" aria-checked="'+hecha+'" tabindex="0" data-toggle="'+t.id+'"></div>'
+      + '<div class="cuerpo"><div class="nm">'+esc(t.n)+'</div><div class="meta">'
+      + '<span class="cat" style="color:'+c.c+';border-color:'+c.c+'55;background:'+c.c+'12">'+esc(c.n)+'</span>'
+      + '<span class="xp">+'+t.xp+' XP</span>'
+      + '<span class="st">+'+c.st+'</span>'
+      + (t.min?'<span class="min-tag">Misión</span>':'')
+      + (t.dias?'<span class="st">'+t.dias.map(function(x){return ['D','L','M','X','J','V','S'][x];}).join(' ')+'</span>':'')
+      + '</div></div>'
+      + '<div class="acc"><button data-edit="'+t.id+'" title="Editar">✎</button><button class="del" data-del="'+t.id+'" title="Eliminar">✕</button></div>'
+      + '</div>';
+  });
+  $('listaTareas').innerHTML = html || '<div class="vacio">Sin tareas activas — crea una</div>';
+}
+
+function pintarEstado(){
+  var xp = xpTotal(), nv = nivelDe(xp), st = statsTotales(), r = rangoDe(nv.nivel), sr = siguienteRango(nv.nivel);
+
+  /* puntos libres */
+  $('puntosLibresCaja').innerHTML = S.puntosLibres > 0
+    ? '<div class="puntos-libres"><div class="n">'+S.puntosLibres+'</div><div><div class="t">Puntos de atributo disponibles</div><div class="d">Repartirlos donde quieras es una decisión estratégica: refuerza tu punto más flojo, o dobla la apuesta en tu vía principal.</div></div></div>'
+    : '';
+
+  var maxStat = Math.max(1, Math.max.apply(null, ORDEN_STATS.map(function(a){return st[a]||0;})));
+  $('attrGrid').innerHTML = ORDEN_STATS.map(function(a){
+    var v = st[a]||0, m = STATS[a];
+    var sub = S.puntosLibres > 0 ? '<button class="attr-btn" data-alloc="'+a+'" title="Asignar 1 punto">+</button>' : '';
+    return '<div class="attr" style="--c:'+m.c+'">'
+      + '<div class="top"><span class="ab">'+a+'</span><span class="nb">'+m.n+'</span><span class="vv">'+v+'</span>'+sub+'</div>'
+      + '<div class="bar"><i style="width:'+(v/maxStat*100)+'%"></i></div>'
+      + '<div class="ds">'+m.d+'</div>'
+      + '</div>';
+  }).join('');
+
+  /* progresión de rango */
+  var ph = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">';
+  RANGOS.forEach(function(x){
+    var act = x.k === r.k, pasado = nv.nivel >= x.l;
+    ph += '<div style="flex:1 1 74px;text-align:center;padding:12px 6px;border:1px solid '
+      + (act?'var(--cian)':pasado?'rgba(90,255,192,.3)':'rgba(79,196,255,.12)')
+      + ';background:'+(act?'rgba(47,143,255,.2)':pasado?'rgba(90,255,192,.06)':'rgba(3,8,20,.5)')
+      + ';' + (act?'box-shadow:0 0 26px -8px rgba(79,227,255,.8);':'') + '">'
+      + '<div style="font-family:var(--display);font-size:26px;line-height:1;color:'
+      + (act?'var(--cian)':pasado?'var(--verde)':'var(--tenue2)')+'">'+x.k+'</div>'
+      + '<div style="font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--tenue2);margin-top:5px">NV '+x.l+'</div></div>';
+  });
+  ph += '</div>';
+  ph += sr
+    ? '<div style="font-size:13.5px;color:var(--tenue)">Siguiente ascenso: <b style="color:var(--cian)">Rango '+sr.k+' — '+esc(sr.n)+'</b> al alcanzar el nivel '+sr.l+'. Te faltan <b style="color:#fff">'+(sr.l-nv.nivel)+'</b> nivel(es).</div>'
+    : '<div style="font-size:13.5px;color:var(--oro)">Has alcanzado el rango máximo reconocido por el Sistema.</div>';
+  $('progresionRango').innerHTML = ph;
+
+  /* acumuladas */
+  var g = resumenGlobal();
+  var kk = [
+    ['Nivel', nv.nivel, 'c', ''],
+    ['XP total', g.xp.toLocaleString('es-ES'), 'o', 'acumulados'],
+    ['Racha actual', rachaActual(), 'g', 'días'],
+    ['Mejor racha', S.mejorRacha, '', 'días'],
+    ['Misiones diarias', g.misiones, 'c', 'cumplidas'],
+    ['Días perfectos', g.perfectos, 'o', ''],
+    ['Tareas totales', g.tareas.toLocaleString('es-ES'), '', 'completadas'],
+    ['Días registrados', g.diasReg, '', 'con actividad'],
+    ['Misiones largas', g.objCompletados+' / '+S.objetivos.length, 'g', 'completadas'],
+    ['Títulos', S.titulos.length+' / '+TITULOS.length, 'o', ''],
+    ['Escudos', S.escudos+' / 3', '', 'de racha'],
+    ['Recuperaciones', S.recuperaciones, 'c', 'en menos de 24 h']
+  ];
+  $('kpiAcum').innerHTML = kk.map(function(x){
+    return '<div class="k"><div class="lb">'+x[0]+'</div><div class="vl '+x[2]+'">'+x[1]+'</div><div class="sm">'+x[3]+'</div></div>';
+  }).join('');
+}
+
+/* ---------- Semana ---------- */
+var semOffset = 0;
+function pintarSemana(){
+  var base = new Date();
+  base.setDate(base.getDate() - base.getDay() + 1 + semOffset*7); // lunes
+  var dias = [];
+  for(var i=0;i<7;i++){ var x=new Date(base); x.setDate(base.getDate()+i); dias.push(fkey(x)); }
+  $('semRango').textContent = fmtFechaCorta(dias[0])+' – '+fmtFechaCorta(dias[6]);
+
+  var hk = hoy();
+  var h = '<div></div>' + dias.map(function(k){
+    return '<div class="hd'+(k===hk?' hoy':'')+'">'+['L','M','X','J','V','S','D'][desdeKey(k).getDay()===0?6:diaSemana(k)-1]+'<br><span style="color:var(--tenue2)">'+fmtFechaCorta(k).split(' ')[0]+'</span></div>';
+  }).join('');
+
+  var activas = tareasActivas();
+  activas.forEach(function(t){
+    var anyDia = dias.some(function(k){ return aplica(t,k); });
+    if(!anyDia) return;
+    var c = CATS[t.c]||CATS.otro;
+    h += '<div class="rn" title="'+esc(t.n)+'"><i style="background:'+c.c+'"></i>'+esc(t.n.length>20?t.n.slice(0,19)+'…':t.n)+'</div>';
+    dias.forEach(function(k){
+      if(!aplica(t,k)){ h += '<div class="cel" style="opacity:.22;cursor:default"></div>'; return; }
+      var d = dia(k), ok = !!d.hechas[t.id];
+      h += '<div class="cel'+(ok?' ok':'')+(k===hk?' hoy-c':'')+'" data-cel="'+t.id+'" data-k="'+k+'">'+(ok?'✓':'')+'</div>';
+    });
+  });
+  $('semGrid').innerHTML = h;
+
+  /* heatmap 12 semanas */
+  var hm = '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">';
+  var fin = new Date(); fin.setDate(fin.getDate() - fin.getDay());
+  for(var s=11;s>=0;s--){
+    var col = '<div style="display:flex;flex-direction:column;gap:3px">';
+    for(var j=6;j>=0;j--){
+      var dd = new Date(fin); dd.setDate(fin.getDate() - s*7 - j);
+      var kk = fkey(dd), d2 = S.dias[kk];
+      var pct = (d2 && d2.total) ? d2.hechasN/d2.total : 0;
+      var bg = pct===0 ? 'rgba(79,196,255,.07)'
+             : pct<.34 ? 'rgba(47,143,255,.3)'
+             : pct<.67 ? 'rgba(79,227,255,.5)'
+             : pct<1   ? 'rgba(90,255,192,.6)'
+             :           'rgba(90,255,192,.95)';
+      col += '<div title="'+kk+' · '+Math.round(pct*100)+'%" style="width:15px;height:15px;background:'+bg+';border:1px solid rgba(79,196,255,.14)"></div>';
+    }
+    hm += col+'</div>';
+  }
+  hm += '<div style="font-size:12px;color:var(--tenue2);line-height:1.8;max-width:250px"><b style="color:var(--cian-suave)">Leyenda</b><br>Cada columna es una semana. Cada celda un día, coloreada por el porcentaje de tareas completadas.<br><br>Lo que buscas no es una columna perfecta: es <b style="color:#fff">que no haya columnas vacías</b>.</div></div>';
+  $('heatmap').innerHTML = hm;
+}
+
+/* ---------- Objetivos ---------- */
+function pintarObjetivos(){
+  if(!S.objetivos.length){ $('listaObj').innerHTML = '<div class="vacio">Sin misiones activas</div>'; return; }
+  $('listaObj').innerHTML = S.objetivos.map(function(o){
+    var pct = Math.min(100, Math.round(o.prog/o.meta*100));
+    return '<div class="obj'+(o.hecho?' completado':'')+'" data-obj="'+o.id+'">'
+      + '<div><div class="nm">'+(o.hecho?'✓ ':'')+esc(o.n)+'</div>'
+      + '<div class="ds">'+esc(o.d||'')+'</div>'
+      + '<div class="pbar"><i style="width:'+pct+'%"></i></div></div>'
+      + '<div class="der"><div class="xp">+'+o.xp+' XP</div>'
+      + '<div class="ctrl"><button data-om="'+o.id+'" title="Restar">−</button>'
+      + '<span class="pct">'+o.prog.toLocaleString('es-ES')+'/'+o.meta.toLocaleString('es-ES')+'</span>'
+      + '<button data-op="'+o.id+'" title="Sumar">+</button>'
+      + '<button data-oe="'+o.id+'" title="Editar">✎</button>'
+      + '<button class="del" data-od="'+o.id+'" title="Eliminar">✕</button></div>'
+      + '<div style="font-family:var(--mono);font-size:9px;color:var(--tenue2);letter-spacing:.12em;text-transform:uppercase">'+esc(o.u||'')+'</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+/* ---------- Títulos ---------- */
+function pintarTitulos(){
+  $('titContador').textContent = S.titulos.length+' / '+TITULOS.length+' desbloqueados';
+  $('titGrid').innerHTML = TITULOS.map(function(t){
+    var tiene = S.titulos.indexOf(t.id) !== -1;
+    var eq = S.titulo === t.id;
+    return '<div class="tit'+(tiene?'':' bloq')+(eq?' equip':'')+'" '+(tiene?'data-equip="'+t.id+'"':'')+'>'
+      + (eq?'<span class="eq">EQUIPADO</span>':'')
+      + '<div class="ic">'+(tiene?t.ic:'🔒')+'</div>'
+      + '<div><div class="nm">'+esc(t.n)+'</div><div class="ds">'+esc(t.d)+'</div></div></div>';
+  }).join('');
+}
+
+/* ---------- Registro ---------- */
+function pintarRegistro(){
+  $('regContador').textContent = S.log.length+' entrada'+(S.log.length===1?'':'s');
+  if(!S.log.length){ $('listaLog').innerHTML = '<div class="vacio">El registro está vacío — completa algo hoy</div>'; return; }
+  $('listaLog').innerHTML = S.log.slice(0,140).map(function(e){
+    return '<div class="log-i '+(e.tipo||'')+'"><span class="f">'+fmtFechaCorta(e.f)+'</span>'
+      + '<span class="t">'+e.txt+'</span>'
+      + '<span class="x">'+(e.xp?'+'+e.xp+' XP':'')+'</span></div>';
+  }).join('');
+}
+
+/* ---------- Sistema ---------- */
+function pintarSistema(){
+  var dn = difDias(S.inicio, hoy())+1;
+  $('ajustes').innerHTML =
+    '<div class="ajuste"><div class="info"><b>Hora de despertar</b><span>Toda la rutina se desplaza con ella. Día '+dn+' del protocolo de anclaje: objetivo '+fmtHora(horaAnclaje(dn))+'.</span></div>'
+    + '<input type="time" id="cfgWake" value="'+fmtHora(S.wake)+'" style="background:rgba(2,6,18,.85);border:1px solid var(--linea);padding:9px 12px;color:#fff"></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Recordatorio de anclaje automático</b><span>Muestra cada día la hora de despertar que toca según el protocolo de 30 días.</span></div>'
+    + '<div class="switch'+(S.cfg.autoAnclaje?' on':'')+'" data-cfg="autoAnclaje"><i></i></div></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Sonido del Sistema</b><span>Confirmaciones, subidas de nivel y ascensos de rango.</span></div>'
+    + '<div class="switch'+(S.cfg.sonido?' on':'')+'" data-cfg="sonido"><i></i></div></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Reponer las tareas originales</b><span>Vuelve a cargar las 20 tareas del Protocolo. Tus días completados y tu progreso NO se borran.</span></div>'
+    + '<button class="btn fan sm" id="btnResetTareas">Reponer tareas</button></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Reponer las misiones originales</b><span>Recarga los 24 objetivos del plan con el progreso a cero.</span></div>'
+    + '<button class="btn fan sm" id="btnResetObj">Reponer misiones</button></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Borrar el día de hoy</b><span>Desmarca todas las tareas de hoy. Útil si has marcado por error.</span></div>'
+    + '<button class="btn pel sm" id="btnBorrarHoy">Borrar hoy</button></div>'
+
+    + '<div class="ajuste"><div class="info"><b>Reiniciar el Sistema completo</b><span>Borra nivel, XP, atributos, racha, tareas, objetivos y registro. No hay vuelta atrás.</span></div>'
+    + '<button class="btn pel sm" id="btnWipe">Reiniciar todo</button></div>';
+
+  $('guardado').innerHTML =
+    '<div class="info-box">Guardado automático en este navegador · última escritura: '
+    + (S.guardadoEn ? new Date(S.guardadoEn).toLocaleString('es-ES') : '—')
+    + ' · tamaño: '+(JSON.stringify(S).length/1024).toFixed(1)+' KB'
+    + (LS ? '' : ' · <b style="color:var(--peligro)">almacenamiento bloqueado en esta vista previa</b>')
+    + '</div>'
+    + '<div style="display:flex;gap:10px;flex-wrap:wrap">'
+    + '<button class="btn" id="btnExport">Exportar partida (.json)</button>'
+    + '<button class="btn fan" id="btnImport">Importar partida</button>'
+    + '<button class="btn fan" id="btnPrint">Imprimir / PDF</button></div>'
+    + '<div class="info-box" style="margin-top:14px">Si abres el archivo directamente en tu navegador (doble clic), el progreso <b>se guarda solo y para siempre</b>. La vista previa integrada puede bloquear el almacenamiento: en ese caso exporta la partida de vez en cuando.</div>';
+
+  $('reglas').innerHTML =
+    '<div style="font-size:14px;color:var(--tenue);line-height:1.75">'
+    + '<p><b style="color:var(--cian-suave)">XP y niveles.</b> Cada tarea otorga XP según su peso. La curva se endurece: el nivel 2 cuesta 90 XP, el 10 cuesta 1.106, el 25 cuesta 4.094. Los primeros niveles llegan rápido a propósito — la recompensa temprana es lo que sostiene el arranque.</p>'
+    + '<p><b style="color:var(--cian-suave)">Multiplicador de racha.</b> Cada día seguido cumpliendo la Misión Diaria suma ×0,02 a todo el XP del día, hasta ×1,50. La racha se mide con los <em>mínimos</em>, no con el día perfecto: es deliberadamente alcanzable.</p>'
+    + '<p><b style="color:var(--cian-suave)">Misión Diaria.</b> Son las 6 tareas marcadas como «Misión» — el Día Mínimo Viable del documento. Completarlas otorga +60 XP extra y mantiene la racha. <b style="color:var(--oro)">Es lo único que no se negocia.</b></p>'
+    + '<p><b style="color:var(--cian-suave)">Día perfecto.</b> Todas las tareas del día: +120 XP extra.</p>'
+    + '<p><b style="color:var(--cian-suave)">Escudos de Racha.</b> Empiezas con 1 y ganas 1 más por cada 7 días seguidos de Misión Diaria (máximo 3). Un escudo absorbe un día fallido <b>sin romper la racha</b>. Es la regla R8 hecha mecánica: optimiza la recuperación, no la perfección.</p>'
+    + '<p><b style="color:var(--cian-suave)">Atributos.</b> Se ganan solos al completar tareas de su categoría, y además recibes <b>3 puntos libres por nivel</b> para repartir donde decidas. FUE=cuerpo · VIT=sueño · INT=código · PER=inglés · DIS=sistema · VOL=voluntad.</p>'
+    + '<p><b style="color:var(--cian-suave)">Rangos.</b> E(1) → D(6) → C(12) → B(22) → A(35) → S(50) → Nivel Nacional(75) → Monarca(100).</p>'
+    + '<p style="margin-bottom:0"><b style="color:var(--peligro)">Penalización.</b> Fallar la Misión Diaria sin escudos rompe la racha y el multiplicador vuelve a ×1,00. No pierdes XP ni nivel — <b>el Sistema no te quita lo que ya ganaste</b>. Solo pierdes inercia. Que es exactamente lo que pierde quien falla dos días seguidos.</p>'
+    + '</div>';
+}
+
+function pintarTodo(){
+  pintarCabecera();
+  var act = document.querySelector('nav#menu button.on');
+  var v = act ? act.getAttribute('data-v') : 'hoy';
+  if(v==='hoy') pintarHoy();
+  else if(v==='status') pintarEstado();
+  else if(v==='semana') pintarSemana();
+  else if(v==='objetivos') pintarObjetivos();
+  else if(v==='titulos') pintarTitulos();
+  else if(v==='registro') pintarRegistro();
+  else if(v==='sistema') pintarSistema();
+}
+
+/* ============================================================
+   10 · MODALES
+   ============================================================ */
+function abrirModal(html){
+  $('modalCaja').innerHTML = '<button class="x-btn" data-cerrar aria-label="Cerrar">×</button>' + html;
+  $('modalFondo').classList.add('ab');
+  var f = $('modalCaja').querySelector('input,select,textarea,button.btn');
+  if(f) setTimeout(function(){ f.focus(); }, 60);
+}
+function cerrarModal(){ $('modalFondo').classList.remove('ab'); }
+$('modalFondo').addEventListener('click', function(e){ if(e.target === $('modalFondo')) cerrarModal(); });
+
+var DIAS_N = ['D','L','M','X','J','V','S'];
+
+function modalTarea(id){
+  var t = id ? S.tareas.filter(function(x){return x.id===id;})[0] : null;
+  var ahoraMin = new Date(); ahoraMin = ahoraMin.getHours()*60+ahoraMin.getMinutes();
+  var horaDef = t ? (t.rel ? S.wake+t.off : t.off) : (ahoraMin + 30);
+  var diasSel = t && t.dias ? t.dias : null;
+
+  var h = '<h3>'+(t?'Editar tarea':'Nueva tarea')+'</h3>'
+    + '<div class="campo"><label>Nombre de la tarea</label>'
+    + '<input type="text" id="fN" maxlength="120" value="'+esc(t?t.n:'')+'" placeholder="Ej. Leer documentación en inglés 20 min"></div>'
+    + '<div class="campo"><div class="fila">'
+    + '<div><label>Hora</label><input type="time" id="fH" value="'+fmtHora(horaDef)+'"></div>'
+    + '<div><label>Categoría</label><select id="fC">'
+    + Object.keys(CATS).map(function(k){ return '<option value="'+k+'"'+(t&&t.c===k?' selected':'')+'>'+CATS[k].n+' → +'+STATS[CATS[k].st].n.slice(0,3).toUpperCase()+'</option>'; }).join('')
+    + '</select></div></div></div>'
+    + '<div class="campo"><div class="fila">'
+    + '<div><label>XP</label><input type="number" id="fX" min="1" max="500" value="'+(t?t.xp:20)+'"></div>'
+    + '<div><label>Desplazamiento</label><select id="fR"><option value="1"'+(!t||t.rel?' selected':'')+'>Relativa al despertar</option><option value="0"'+(t&&!t.rel?' selected':'')+'>Hora fija del reloj</option></select></div>'
+    + '</div></div>'
+    + '<div class="campo"><label>Días de la semana <span style="color:var(--tenue2)">(sin marcar = todos los días)</span></label>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'
+    + DIAS_N.map(function(nm,i){
+        var on = diasSel ? diasSel.indexOf(i)!==-1 : false;
+        return '<label class="chk-linea" style="margin:0;padding:7px 11px;flex:0 0 auto"><input type="checkbox" class="fD" value="'+i+'"'+(on?' checked':'')+' style="width:14px;height:14px"> '+nm+'</label>';
+      }).join('')
+    + '</div></div>'
+    + '<label class="chk-linea"><input type="checkbox" id="fM"'+(t&&t.min?' checked':'')+'> Forma parte de la <b style="color:var(--oro)">Misión Diaria</b> (mínimo innegociable)</label>'
+    + '<label class="chk-linea"><input type="checkbox" id="fA"'+(!t||t.activo?' checked':'')+'> Tarea activa</label>'
+    + '<div class="modal-acc">'
+    + (t?'<button class="btn pel sm" id="fDel">Eliminar</button>':'')
+    + '<button class="btn fan sm" data-cerrar>Cancelar</button>'
+    + '<button class="btn" id="fOk">'+(t?'Guardar':'Crear tarea')+'</button></div>';
+
+  abrirModal(h);
+
+  $('fOk').addEventListener('click', function(){
+    var n = $('fN').value.trim();
+    if(!n){ $('fN').focus(); $('fN').style.borderColor='var(--peligro)'; return; }
+    var hp = $('fH').value.split(':');
+    var mins = (+hp[0])*60 + (+hp[1]||0);
+    var xp = Math.max(1, Math.min(500, parseInt($('fX').value,10)||20));
+    var rel = $('fR').value === '1';
+    var ds = Array.prototype.map.call(document.querySelectorAll('.fD:checked'), function(x){return +x.value;}).sort();
+    var obj = {
+      n:n, c:$('fC').value, xp:xp, min:$('fM').checked, activo:$('fA').checked,
+      rel:rel, off: rel ? mins - S.wake : mins, dias: ds.length && ds.length<7 ? ds : null
+    };
+    if(t){ Object.assign(t, obj); toast('Tarea actualizada'); }
+    else {
+      obj.id = uid();
+      obj.orden = S.tareas.length;
+      S.tareas.push(obj);
+      registrar('tarea','Tarea creada: <b>'+esc(n)+'</b>',0);
+      toast('Tarea creada · <b>+'+xp+' XP</b>');
+      sfxTarea();
+    }
+    cerrarModal(); escribir(); pintarTodo();
+  });
+  var del = $('fDel');
+  if(del) del.addEventListener('click', function(){ borrarTarea(t.id); });
+}
+
+function borrarTarea(id){
+  var t = S.tareas.filter(function(x){return x.id===id;})[0];
+  if(!t) return;
+  abrirModal('<h3>Eliminar tarea</h3>'
+    + '<p style="color:var(--tenue);font-size:14px">¿Eliminar <b style="color:#fff">«'+esc(t.n)+'»</b> del Sistema?</p>'
+    + '<p style="color:var(--tenue2);font-size:13px">El XP y los atributos ya ganados en días anteriores se conservan.</p>'
+    + '<div class="modal-acc"><button class="btn fan sm" data-cerrar>Cancelar</button>'
+    + '<button class="btn pel sm" id="cOk">Eliminar</button></div>');
+  $('cOk').addEventListener('click', function(){
+    S.tareas = S.tareas.filter(function(x){return x.id!==id;});
+    for(var k in S.dias) delete S.dias[k].hechas[id];
+    registrar('tarea','Tarea eliminada: <b>'+esc(t.n)+'</b>',0);
+    cerrarModal(); escribir(); pintarTodo(); toast('Tarea eliminada');
+  });
+}
+
+function modalObjetivo(id){
+  var o = id ? S.objetivos.filter(function(x){return x.id===id;})[0] : null;
+  abrirModal('<h3>'+(o?'Editar misión':'Nueva misión de largo plazo')+'</h3>'
+    + '<div class="campo"><label>Nombre</label><input type="text" id="gN" maxlength="110" value="'+esc(o?o.n:'')+'" placeholder="Ej. Proyecto 4 · Full-stack con auth"></div>'
+    + '<div class="campo"><label>Descripción</label><textarea id="gD" maxlength="240">'+esc(o?o.d:'')+'</textarea></div>'
+    + '<div class="campo"><div class="fila">'
+    + '<div><label>Meta</label><input type="number" id="gM" min="1" max="100000" value="'+(o?o.meta:1)+'"></div>'
+    + '<div><label>Unidad</label><input type="text" id="gU" maxlength="22" value="'+esc(o?o.u:'')+'" placeholder="proyecto, días, horas…"></div>'
+    + '</div></div>'
+    + '<div class="campo"><div class="fila">'
+    + '<div><label>XP al completarla</label><input type="number" id="gX" min="10" max="20000" value="'+(o?o.xp:300)+'"></div>'
+    + '<div><label>Progreso actual</label><input type="number" id="gP" min="0" max="100000" value="'+(o?o.prog:0)+'"></div>'
+    + '</div></div>'
+    + '<div class="modal-acc">'
+    + (o?'<button class="btn pel sm" id="gDel">Eliminar</button>':'')
+    + '<button class="btn fan sm" data-cerrar>Cancelar</button>'
+    + '<button class="btn" id="gOk">'+(o?'Guardar':'Crear misión')+'</button></div>');
+
+  $('gOk').addEventListener('click', function(){
+    var n = $('gN').value.trim();
+    if(!n){ $('gN').focus(); $('gN').style.borderColor='var(--peligro)'; return; }
+    var meta = Math.max(1, parseInt($('gM').value,10)||1);
+    var xp = Math.max(10, parseInt($('gX').value,10)||300);
+    var prog = Math.max(0, parseInt($('gP').value,10)||0);
+    if(o){
+      var estaba = o.hecho;
+      o.n=n; o.d=$('gD').value.trim(); o.meta=meta; o.u=$('gU').value.trim(); o.xp=xp; o.prog=Math.min(meta,prog);
+      o.hecho = o.prog >= o.meta;
+      if(o.hecho && !estaba) S.xpObj += o.xp;
+      if(!o.hecho && estaba) S.xpObj = Math.max(0, S.xpObj - o.xp);
+      toast('Misión actualizada');
+    } else {
+      S.objetivos.push({id:uid(), n:n, d:$('gD').value.trim(), meta:meta, u:$('gU').value.trim(),
+        xp:xp, prog:Math.min(meta,prog), hecho:Math.min(meta,prog)>=meta, orden:S.objetivos.length});
+      registrar('objetivo','Misión creada: <b>'+esc(n)+'</b>',0);
+      toast('Misión creada · <b>+'+xp+' XP</b>');
+    }
+    cerrarModal(); sincronizar(); escribir(); pintarTodo();
+  });
+  var gd = $('gDel');
+  if(gd) gd.addEventListener('click', function(){
+    if(o.hecho) S.xpObj = Math.max(0, S.xpObj - o.xp);
+    S.objetivos = S.objetivos.filter(function(x){return x.id!==o.id;});
+    cerrarModal(); escribir(); pintarTodo(); toast('Misión eliminada');
+  });
+}
+
+function confirmar(txt, onOk, lbl){
+  abrirModal('<h3>Confirmar</h3><p style="color:var(--tenue);font-size:14px">'+txt+'</p>'
+    + '<div class="modal-acc"><button class="btn fan sm" data-cerrar>Cancelar</button>'
+    + '<button class="btn pel sm" id="kOk">'+(lbl||'Confirmar')+'</button></div>');
+  $('kOk').addEventListener('click', function(){ cerrarModal(); onOk(); });
+}
+
+/* ============================================================
+   11 · EVENTOS
+   ============================================================ */
+document.addEventListener('click', function(e){
+  var t = e.target;
+
+  if(t.hasAttribute && t.hasAttribute('data-cerrar')){ cerrarModal(); return; }
+
+  /* navegación */
+  var nb = t.closest ? t.closest('nav#menu button') : null;
+  if(nb){
+    document.querySelectorAll('nav#menu button').forEach(function(b){ b.classList.remove('on'); });
+    nb.classList.add('on');
+    var v = nb.getAttribute('data-v');
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+    var pan = $('p-'+v); if(pan) pan.classList.add('on');
+    pintarTodo();
+    window.scrollTo({top:0, behavior:'smooth'});
+    return;
+  }
+
+  /* misión diaria chip */
+  var mc = t.closest ? t.closest('.mchip') : null;
+  if(mc){ marcar(mc.getAttribute('data-min'), hoy(), e); return; }
+
+  /* tarea: checkbox */
+  var tg = t.closest ? t.closest('[data-toggle]') : null;
+  if(tg){ marcar(tg.getAttribute('data-toggle'), hoy(), e); return; }
+
+  /* tarea: editar / borrar */
+  if(t.hasAttribute('data-edit')){ modalTarea(t.getAttribute('data-edit')); return; }
+  if(t.hasAttribute('data-del')){ borrarTarea(t.getAttribute('data-del')); return; }
+
+  /* celda semanal */
+  var cel = t.closest ? t.closest('.cel[data-cel]') : null;
+  if(cel){
+    var k = cel.getAttribute('data-k');
+    if(k > hoy()){ toast('No puedes marcar el futuro'); return; }
+    marcar(cel.getAttribute('data-cel'), k, e);
+    return;
+  }
+
+  /* objetivos */
+  if(t.hasAttribute('data-op')){ var idp=t.getAttribute('data-op');
+    var op=S.objetivos.filter(function(x){return x.id===idp;})[0];
+    completarObj(idp, op && op.meta>3 ? Math.max(1,Math.round(op.meta/20)) : 1); return; }
+  if(t.hasAttribute('data-om')){ var idm=t.getAttribute('data-om');
+    var om=S.objetivos.filter(function(x){return x.id===idm;})[0];
+    completarObj(idm, om && om.meta>3 ? -Math.max(1,Math.round(om.meta/20)) : -1); return; }
+  if(t.hasAttribute('data-oe')){ modalObjetivo(t.getAttribute('data-oe')); return; }
+  if(t.hasAttribute('data-od')){
+    var idd=t.getAttribute('data-od');
+    var od=S.objetivos.filter(function(x){return x.id===idd;})[0];
+    confirmar('¿Eliminar la misión <b style="color:#fff">«'+esc(od?od.n:'')+'»</b>?', function(){
+      if(od && od.hecho) S.xpObj = Math.max(0, S.xpObj - od.xp);
+      S.objetivos = S.objetivos.filter(function(x){return x.id!==idd;});
+      escribir(); pintarTodo(); toast('Misión eliminada');
+    }, 'Eliminar');
+    return;
+  }
+
+  /* títulos */
+  var ti = t.closest ? t.closest('.tit[data-equip]') : null;
+  if(ti){
+    var idt = ti.getAttribute('data-equip');
+    S.titulo = (S.titulo === idt) ? null : idt;
+    escribir(); pintarTodo();
+    var tt = TITULOS.filter(function(x){return x.id===idt;})[0];
+    toast(S.titulo ? 'Título equipado: <b>'+esc(tt.n)+'</b>' : 'Título retirado');
+    if(S.titulo) sfxTitulo();
+    return;
+  }
+
+  /* atributos */
+  if(t.hasAttribute('data-alloc')){
+    var a = t.getAttribute('data-alloc');
+    if(S.puntosLibres > 0){
+      S.puntosLibres--; S.alloc[a] = (S.alloc[a]||0)+1;
+      tono(660,0,.1,.06,'triangle'); tono(990,.06,.16,.05,'triangle');
+      toast('+1 <b>'+a+'</b> · '+STATS[a].n);
+      escribir(); pintarTodo();
+    }
+    return;
+  }
+
+  /* switches de configuración */
+  var sw = t.closest ? t.closest('.switch[data-cfg]') : null;
+  if(sw){
+    var key = sw.getAttribute('data-cfg');
+    S.cfg[key] = !S.cfg[key];
+    escribir(); pintarTodo();
+    return;
+  }
+
+  /* botones fijos */
+  if(t.id === 'btnNuevaTarea'){ modalTarea(null); return; }
+  if(t.id === 'btnNuevoObj'){ modalObjetivo(null); return; }
+  if(t.id === 'btnReiniciarDia'){
+    confirmar('¿Desmarcar todas las tareas de <b>hoy</b>?<br><span style="color:var(--tenue2);font-size:13px">El XP de hoy se recalculará.</span>', function(){
+      S.dias[hoy()] = {hechas:{}, xp:0, minTotal:0, mision:false, total:0, hechasN:0, perfecto:false,
+        stats:{FUE:0,VIT:0,INT:0,PER:0,DIS:0,VOL:0}, cat:{}, escudado:false, procesado:false};
+      escribir(); pintarTodo(); toast('Día reiniciado');
+    }, 'Reiniciar');
+    return;
+  }
+  if(t.id === 'btnSemPrev'){ semOffset--; pintarSemana(); return; }
+  if(t.id === 'btnSemNext'){ if(semOffset<0){ semOffset++; pintarSemana(); } return; }
+  if(t.id === 'btnPrint'){ window.print(); return; }
+  if(t.id === 'btnExport'){ exportar(); return; }
+  if(t.id === 'btnImport'){ $('importFile').click(); return; }
+  if(t.id === 'btnResetTareas'){
+    confirmar('¿Reponer las 20 tareas originales del Protocolo?<br><span style="color:var(--tenue2);font-size:13px">Se sustituyen las actuales. Tu XP, nivel, racha y días completados se conservan.</span>', function(){
+      S.tareas = nuevoEstado().tareas; escribir(); pintarTodo(); toast('Tareas repuestas');
+    }, 'Reponer');
+    return;
+  }
+  if(t.id === 'btnResetObj'){
+    confirmar('¿Reponer las 24 misiones originales con el progreso a cero?', function(){
+      var xpHechos = S.objetivos.filter(function(o){return o.hecho;}).reduce(function(a,o){return a+o.xp;},0);
+      S.xpObj = Math.max(0, S.xpObj - xpHechos);
+      S.objetivos = nuevoEstado().objetivos; escribir(); sincronizar(); pintarTodo(); toast('Misiones repuestas');
+    }, 'Reponer');
+    return;
+  }
+  if(t.id === 'btnBorrarHoy'){
+    confirmar('¿Borrar todos los datos de <b>hoy</b>?', function(){
+      delete S.dias[hoy()]; escribir(); pintarTodo(); toast('Hoy borrado');
+    }, 'Borrar');
+    return;
+  }
+  if(t.id === 'btnWipe'){
+    confirmar('Esto <b style="color:var(--peligro)">borra toda tu partida</b>: nivel, XP, atributos, racha, títulos, tareas personalizadas, misiones y registro.<br><br>Exporta antes si quieres conservarla.', function(){
+      S = nuevoEstado(); escribir(); pintarTodo(); toast('Sistema reiniciado');
+      notificar({head:'[ Reinicio del Sistema ]', big:'NIVEL 1', tx:'El Sistema se ha reiniciado.<br>Todos los parámetros del jugador han vuelto a su estado inicial.', rw:['Rango E'], oro:false});
+    }, 'Borrar todo');
+    return;
+  }
+});
+
+/* teclado en checkboxes de tarea */
+document.addEventListener('keydown', function(e){
+  if((e.key === 'Enter' || e.key === ' ') && e.target.hasAttribute && e.target.hasAttribute('data-toggle')){
+    e.preventDefault();
+    marcar(e.target.getAttribute('data-toggle'), hoy(), null);
+  }
+  if(e.key === 'Escape'){
+    if($('notiFondo').classList.contains('ab')) cerrarNoti();
+    else if($('modalFondo').classList.contains('ab')) cerrarModal();
+  }
+});
+
+/* nombre del jugador */
+var inputN = $('nombreJugador');
+inputN.addEventListener('input', function(){ S.nombre = inputN.value; });
+inputN.addEventListener('change', function(){
+  S.nombre = inputN.value.trim() || 'JUGADOR';
+  escribir(); pintarCabecera(); toast('Jugador: <b>'+esc(S.nombre)+'</b>');
+});
+inputN.addEventListener('keydown', function(e){ if(e.key==='Enter') inputN.blur(); });
+
+/* hora de despertar */
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id === 'cfgWake'){
+    var p = e.target.value.split(':');
+    S.wake = (+p[0])*60 + (+p[1]||0);
+    escribir(); pintarTodo();
+    toast('Despertador: <b>'+fmtHora(S.wake)+'</b> · rutina desplazada');
+  }
+});
+
+/* exportar / importar */
+function exportar(){
+  var blob = new Blob([JSON.stringify(S,null,2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sistema-partida-'+hoy()+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); if(a.parentNode) a.parentNode.removeChild(a); }, 400);
+  toast('Partida exportada');
+}
+$('importFile').addEventListener('change', function(e){
+  var f = e.target.files[0]; if(!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try{
+      var d = JSON.parse(rd.result);
+      if(!d || !d.tareas || !d.dias) throw new Error('formato');
+      S = d;
+      var base = nuevoEstado();
+      for(var k in base) if(S[k]===undefined) S[k]=base[k];
+      escribir(); sincronizar(); pintarTodo();
+      toast('Partida importada: <b>'+esc(S.nombre)+'</b> · Nv '+nivelDe(xpTotal()).nivel, true);
+    }catch(err){ toast('Archivo no válido'); }
+  };
+  rd.readAsText(f);
+  e.target.value = '';
+});
+
+/* ============================================================
+   12 · ARRANQUE
+   ============================================================ */
+function arrancar(){
+  var avisos = procesarPasados();
+  recalcDia(hoy());
+  sincronizar();
+  escribir();
+  pintarTodo();
+
+  if(!LS){
+    console.warn('[Sistema] localStorage no disponible en este contexto.');
+  }
+  avisos.forEach(function(a,i){ setTimeout(function(){ notificar(a); }, 500 + i*900); });
+
+  /* primera vez */
+  if(S.log.length === 0){
+    registrar('sistema','<b>El Sistema se ha iniciado.</b> Jugador registrado: '+esc(S.nombre),0);
+    notificar({
+      head:'[ Notificación ]',
+      big:'BIENVENIDO,<br>JUGADOR',
+      tx:'Has sido registrado como Jugador del Sistema.<br><br>Se ha generado tu <strong>Misión Diaria</strong>: 6 tareas mínimas innegociables.<br>Se han cargado <strong>20 tareas</strong> ordenadas por hora y <strong>24 misiones</strong> de largo plazo.<br><br>Tu rango actual es <strong>E</strong>. Todo el mundo empieza ahí.',
+      rw:['Rango E · Nivel 1','1 Escudo de Racha','×1,00 multiplicador'],
+      oro:true
+    });
+  }
+}
+
+/* recalcular al cambiar de día con la pestaña abierta */
+var ultimaFecha = hoy();
+setInterval(function(){
+  if(hoy() !== ultimaFecha){
+    ultimaFecha = hoy();
+    procesarPasados(); sincronizar(); escribir(); pintarTodo();
+  }
+}, 30000);
+
+addEventListener('keydown', function(e){
+  if(e.key === 'n' && !e.target.matches('input,textarea,select') && !e.ctrlKey && !e.metaKey){
+    if(!$('modalFondo').classList.contains('ab')) modalTarea(null);
+  }
+});
+
+try{
+  arrancar();
+}catch(err){
+  try{
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div style="margin:14px;padding:16px 18px;border:1px solid #ff4d6a;background:rgba(255,77,106,.12);color:#ffc9d3;font-size:14px">'
+      +'<b style="color:#fff">El Sistema no ha podido iniciarse.</b><br>'
+      + 'Error: ' + String(err && err.message ? err.message : err)
+      + '<br><br>Recarga la página. Si persiste, ve a <b>Sistema → Importar partida</b> con un .json exportado previamente.</div>');
+  }catch(e2){}
+  if(window.console && console.error) console.error('[Sistema]', err);
+}
+})();
+</script>
+</body>
+</html>
